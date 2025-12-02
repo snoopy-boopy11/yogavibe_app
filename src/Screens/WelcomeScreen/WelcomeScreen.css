@@ -1,0 +1,219 @@
+/* WelcomeScreen.css */
+
+/* Подключение шрифтов */
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,900;1,900&family=Montserrat:wght@700;900&display=swap');
+
+/* Сброс всех отступов по умолчанию */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.welcome-screen {
+  background-image: url('../../../public/assets/images/background_img.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.content {
+  flex: 1;
+  padding: 0;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.main-text {
+  text-align: center;
+  max-width: 90%;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.main-text h1 {
+  font-family: 'Source Serif Pro', serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: clamp(1.8rem, 4vw, 50px);
+  line-height: 1.3;
+  margin-bottom: 0;
+  color: #f7e1d7;
+}
+
+.description {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1rem, 2.5vw, 25px);
+  margin-bottom: 0;
+  line-height: 1.6;
+  padding: 20px 0 30px;
+  color: #69505c;
+}
+
+.cta-button {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: clamp(0.9rem, 1.8vw, 21px);
+  width: min(287px, 90%);
+  height: 70px;
+  background-color: #ded8d2;
+  color: #3c4748;
+  border: none;
+  border-radius: 20px;
+  padding: 12px 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0 auto;
+  display: block;
+}
+
+.cta-button:hover {
+  box-shadow: 0 5px 15px #69505C;
+  transform: translateY(-2px);
+}
+
+.footer {
+  width: 100%;
+  background-color: #F6C0CA;
+  margin-top: auto;
+  padding: clamp(20px, 4vw, 40px);
+  max-height: auto;
+  height: auto;
+}
+
+.how-it-works {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.how-it-works h2 {
+  font-family: 'Source Serif Pro';
+  font-style: normal;
+  font-weight: 700;
+  text-align: center;
+  font-size: clamp(1.2rem, 3vw, 40px);
+  margin-bottom: clamp(20px, 3vw, 30px);
+  padding: 0;
+  color: #69505C;
+  letter-spacing: 2px;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: clamp(20px, 3vw, 40px);
+  width: 100%;
+  padding: 0 10px;
+}
+
+.step {
+  padding: 0;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2vw, 15px);
+  margin-bottom: 15px;
+}
+
+.step-icon {
+  width: clamp(30px, 3vw, 40px);
+  height: clamp(30px, 3vw, 40px);
+  flex-shrink: 0;
+}
+
+.step h3 {
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 900;
+  font-size: clamp(1rem, 2.2vw, 22px);
+  margin: 0;
+  padding: 0;
+  color: #69505C;
+  text-decoration: underline;
+  text-decoration-color: #69505C;
+  text-underline-offset: 7px;
+  letter-spacing: 1px;
+}
+
+.step p {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: clamp(0.75rem, 1.4vw, 14px);
+  line-height: 1.6;
+  margin: 0;
+  color: #35252c;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .content {
+    min-height: 50vh;
+  }
+  
+  .main-text {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .welcome-screen {
+    background-attachment: scroll;
+  }
+  
+  .content {
+    min-height: 40vh;
+    justify-content: flex-start;
+    padding-top: 40px;
+  }
+  
+  .main-text {
+    max-width: 95%;
+    padding: 10px;
+  }
+  
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  
+  .step-header {
+    gap: 12px;
+  }
+  
+  .footer {
+    padding: 30px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-text h1 {
+    font-size: 1.5rem;
+  }
+  
+  .description {
+    font-size: 0.9rem;
+    padding: 15px 0 20px;
+  }
+  
+  .cta-button {
+    height: 60px;
+    font-size: 0.9rem;
+  }
+  
+  .step {
+    margin: 0 10px;
+  }
+}

@@ -1,0 +1,47 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.App {
+  min-height: 100vh;
+}
+
+/* Стили для экрана загрузки */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(140deg, #f9cdd6 0%, #eebac9 100%);
+  background-image: url('../../../public/assets/images/background_2.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #69505c;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-screen p {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  color: #69505c;
+  font-size: 1.2rem;
+}
