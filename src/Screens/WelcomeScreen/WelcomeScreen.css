@@ -1,174 +1,182 @@
 /* WelcomeScreen.css */
-
-/* Подключение шрифтов */
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,900;1,900&family=Montserrat:wght@700;900&display=swap');
 
-/* Сброс всех отступов по умолчанию */
+/* Базовые сбросы */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* Основной контейнер страницы */
 .welcome-screen {
   background-image: url('../../../public/assets/images/background_img.jpg');
   background-size: cover;
-  background-position: center center;
+  background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
   min-height: 100vh;
-  width: 100%;
   display: flex;
   flex-direction: column;
-  position: relative;
   overflow-x: hidden;
 }
 
+/* Основной контент с мотивационным текстом */
 .content {
   flex: 1;
-  padding: 0;
-  position: relative;
-  z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
+  z-index: 2;
 }
 
+/* Контейнер с текстом и кнопкой */
 .main-text {
   text-align: center;
   max-width: 90%;
   margin: 0 auto;
-  padding: 20px;
+  padding: 1.25rem;
 }
 
+/* Главный заголовок */
 .main-text h1 {
   font-family: 'Source Serif Pro', serif;
   font-style: italic;
   font-weight: 900;
-  font-size: clamp(1.8rem, 4vw, 50px);
+  font-size: clamp(1.8rem, 4vw, 3.125rem);
   line-height: 1.3;
-  margin-bottom: 0;
   color: #f7e1d7;
+  margin-bottom: 0;
 }
 
+/* Описание под заголовком */
 .description {
   font-family: 'Montserrat', sans-serif;
   font-weight: 900;
-  font-size: clamp(1rem, 2.5vw, 25px);
-  margin-bottom: 0;
+  font-size: clamp(1rem, 2.5vw, 1.5625rem);
   line-height: 1.6;
-  padding: 20px 0 30px;
+  padding: 1.25rem 0 1.875rem;
   color: #69505c;
+  margin-bottom: 0;
 }
 
+/* Основная кнопка призыва к действию */
 .cta-button {
   font-family: 'Montserrat', sans-serif;
   font-weight: 900;
-  font-size: clamp(0.9rem, 1.8vw, 21px);
-  width: min(287px, 90%);
-  height: 70px;
+  font-size: clamp(0.9rem, 1.8vw, 1.3125rem);
+  width: min(17.9375rem, 90%);
+  height: 4.375rem;
   background-color: #ded8d2;
   color: #3c4748;
   border: none;
-  border-radius: 20px;
-  padding: 12px 30px;
+  border-radius: 1.25rem;
+  padding: 0.75rem 1.875rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 0 auto;
   display: block;
+  margin: 0 auto;
+  transition: all 0.3s ease;
 }
 
 .cta-button:hover {
-  box-shadow: 0 5px 15px #69505C;
-  transform: translateY(-2px);
+  box-shadow: 0 0.3125rem 0.9375rem #69505C;
+  transform: translateY(-0.125rem);
 }
 
+/* Футер с инструкцией */
 .footer {
   width: 100%;
   background-color: #F6C0CA;
   margin-top: auto;
-  padding: clamp(20px, 4vw, 40px);
-  max-height: auto;
-  height: auto;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
 }
 
+/* Контейнер инструкции "Как это работает" */
 .how-it-works {
-  max-width: 1200px;
+  max-width: 75rem;
   margin: 0 auto;
   width: 100%;
 }
 
+/* Заголовок инструкции */
 .how-it-works h2 {
-  font-family: 'Source Serif Pro';
-  font-style: normal;
+  font-family: 'Source Serif Pro', serif;
   font-weight: 700;
+  font-size: clamp(1.2rem, 3vw, 2.5rem);
   text-align: center;
-  font-size: clamp(1.2rem, 3vw, 40px);
-  margin-bottom: clamp(20px, 3vw, 30px);
-  padding: 0;
+  margin-bottom: clamp(1.25rem, 3vw, 1.875rem);
   color: #69505C;
-  letter-spacing: 2px;
+  letter-spacing: 0.125rem;
+  padding: 0;
 }
 
+/* Контейнер для шагов инструкции */
 .steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
-  gap: clamp(20px, 3vw, 40px);
+  grid-template-columns: repeat(auto-fit, minmax(min(18.75rem, 100%), 1fr));
+  gap: clamp(1.25rem, 3vw, 2.5rem);
   width: 100%;
-  padding: 0 10px;
+  padding: 0 0.625rem;
 }
 
+/* Отдельный шаг инструкции */
 .step {
   padding: 0;
 }
 
+/* Заголовок шага с иконкой */
 .step-header {
   display: flex;
   align-items: center;
-  gap: clamp(10px, 2vw, 15px);
-  margin-bottom: 15px;
+  gap: clamp(0.625rem, 2vw, 0.9375rem);
+  margin-bottom: 0.9375rem;
 }
 
+/* Иконка шага */
 .step-icon {
-  width: clamp(30px, 3vw, 40px);
-  height: clamp(30px, 3vw, 40px);
+  width: clamp(1.875rem, 3vw, 2.5rem);
+  height: clamp(1.875rem, 3vw, 2.5rem);
   flex-shrink: 0;
 }
 
+/* Заголовок шага */
 .step h3 {
   font-family: 'Source Serif Pro', serif;
   font-weight: 900;
-  font-size: clamp(1rem, 2.2vw, 22px);
+  font-size: clamp(1rem, 2.2vw, 1.375rem);
+  color: #69505C;
   margin: 0;
   padding: 0;
-  color: #69505C;
   text-decoration: underline;
   text-decoration-color: #69505C;
-  text-underline-offset: 7px;
-  letter-spacing: 1px;
+  text-underline-offset: 0.4375rem;
+  letter-spacing: 0.0625rem;
 }
 
+/* Текст шага */
 .step p {
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
-  font-size: clamp(0.75rem, 1.4vw, 14px);
+  font-size: clamp(0.75rem, 1.4vw, 0.875rem);
   line-height: 1.6;
   margin: 0;
   color: #35252c;
 }
 
-/* Адаптивность */
-@media (max-width: 1024px) {
+/* Адаптивность для планшетов и ноутбуков */
+@media (max-width: 64rem) {
   .content {
     min-height: 50vh;
   }
   
   .main-text {
-    padding: 15px;
+    padding: 0.9375rem;
   }
 }
 
-@media (max-width: 768px) {
+/* Адаптивность для планшетов */
+@media (max-width: 48rem) {
   .welcome-screen {
     background-attachment: scroll;
   }
@@ -176,44 +184,45 @@
   .content {
     min-height: 40vh;
     justify-content: flex-start;
-    padding-top: 40px;
+    padding-top: 2.5rem;
   }
   
   .main-text {
     max-width: 95%;
-    padding: 10px;
+    padding: 0.625rem;
   }
   
   .steps {
     grid-template-columns: 1fr;
-    gap: 25px;
+    gap: 1.5625rem;
   }
   
   .step-header {
-    gap: 12px;
+    gap: 0.75rem;
   }
   
   .footer {
-    padding: 30px 15px;
+    padding: 1.875rem 0.9375rem;
   }
 }
 
-@media (max-width: 480px) {
+/* Адаптивность для мобильных */
+@media (max-width: 30rem) {
   .main-text h1 {
     font-size: 1.5rem;
   }
   
   .description {
     font-size: 0.9rem;
-    padding: 15px 0 20px;
+    padding: 0.9375rem 0 1.25rem;
   }
   
   .cta-button {
-    height: 60px;
+    height: 3.75rem;
     font-size: 0.9rem;
   }
   
   .step {
-    margin: 0 10px;
+    margin: 0 0.625rem;
   }
 }
