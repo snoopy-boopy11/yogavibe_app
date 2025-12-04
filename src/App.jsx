@@ -1,67 +1,78 @@
-// src/App.js
+// src/App.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import WelcomeScreen from './screens/WelcomeScreen/WelcomeScreen';
 import LoginScreen from './screens/LoginScreen/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen/RegisterScreen';
 import MainScreen from './screens/MainScreen/MainScreen';
+import AuthService from './services/AuthService';
 import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
   // Проверка аутентификации при загрузке
   useEffect(() => {
-    const checkAuth = () => {
-      const user = localStorage.getItem('yogavibe_user');
-      setIsAuthenticated(!!user);
-      setLoading(false);
+    const checkAuth = async () => {
+      try {
+        const authResult = await AuthService.checkAuth();
+        setIsAuthenticated(authResult.isAuthenticated);
+        if (authResult.user) {
+          setUser(authResult.user);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     checkAuth();
   }, []);
 
   // Обработчик входа
-  const handleLogin = (userData) => {
-    // Сохраняем полные данные пользователя
-    const fullUserData = {
-      id: userData.id,
-      username: userData.username,
-      email: userData.email,
-      name: userData.name,
-      createdAt: new Date().toISOString()
-    };
-    
-    localStorage.setItem('yogavibe_user', JSON.stringify(fullUserData));
-    setIsAuthenticated(true);
-  };
-
-  // Обработчик выхода
-  const handleLogout = () => {
-    localStorage.removeItem('yogavibe_user');
-    setIsAuthenticated(false);
+  const handleLogin = async (credentials) => {
+    try {
+      const result = await AuthService.login(credentials);
+      if (result.success) {
+        setUser(result.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+      return { success: false, message: result.message };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, message: 'Ошибка при входе' };
+    }
   };
 
   // Обработчик регистрации
-  const handleRegister = (userData) => {
-    // Генерируем уникальный ID для нового пользователя
-    const newUser = {
-      id: Date.now(),
-      username: userData.username,
-      email: userData.email,
-      name: userData.name || userData.username,
-      createdAt: new Date().toISOString()
-    };
-    
-    // Сохраняем пользователя в список пользователей
-    const users = JSON.parse(localStorage.getItem('yogavibe_users') || '[]');
-    users.push(newUser);
-    localStorage.setItem('yogavibe_users', JSON.stringify(users));
-    
-    // Автоматически логиним пользователя
-    localStorage.setItem('yogavibe_user', JSON.stringify(newUser));
-    setIsAuthenticated(true);
+  const handleRegister = async (userData) => {
+    try {
+      const result = await AuthService.register(userData);
+      if (result.success) {
+        setUser(result.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+      return { success: false, message: result.message };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { success: false, message: 'Ошибка при регистрации' };
+    }
+  };
+
+  // Обработчик выхода
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   if (loading) {
@@ -98,7 +109,7 @@ function App() {
             path="/main" 
             element={
               isAuthenticated ? 
-              <MainScreen onLogout={handleLogout} /> : 
+              <MainScreen user={user} onLogout={handleLogout} /> : 
               <Navigate to="/login" />
             } 
           />
