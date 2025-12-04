@@ -1,0 +1,603 @@
+// src/screens/MainScreen/MainScreen.jsx
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './MainScreen.css';
+import NotesScreen from '../NotesScreen/NotesScreen';
+
+import mentor1 from './mentors/1.jpg';
+import mentor2 from './mentors/2.jpg';
+import mentor3 from './mentors/3.jpg';
+import mentor4 from './mentors/4.jpg';
+import mentor5 from './mentors/5.jpg';
+import mentor6 from './mentors/6.jpg';
+import mentor7 from './mentors/7.jpg';
+import mentor8 from './mentors/8.jpg';
+
+const mentors = [
+  { id: 1, name: "Анна Иванова", description: "Опытный инструктор по хатха йоге с 5-летним стажем", gender: "female", city: "Москва", price: 2500, yogaStyle: "Хатха", photo: mentor1 },
+  { id: 2, name: "Дмитрий Петров", description: "Специалист по аштанга йоге и медитации", gender: "male", city: "Санкт-Петербург", price: 3000, yogaStyle: "Аштанга", photo: mentor2 },
+  { id: 3, name: "Мария Сидорова", description: "Йога для беременных и восстановительная йога", gender: "female", city: "Новосибирск", price: 2000, yogaStyle: "Восстановительная", photo: mentor3 },
+  { id: 4, name: "Алексей Козлов", description: "Инструктор по силовой йоге и йоге для мужчин", gender: "male", city: "Екатеринбург", price: 2800, yogaStyle: "Силовая", photo: mentor4 },
+  { id: 5, name: "Елена Смирнова", description: "Кундалини йога и работа с чакрами", gender: "female", city: "Москва", price: 3200, yogaStyle: "Кундалини", photo: mentor5 },
+  { id: 6, name: "Сергей Николаев", description: "Йогатерапия и работа с травмами", gender: "male", city: "Казань", price: 2700, yogaStyle: "Йогатерапия", photo: mentor6 },
+  { id: 7, name: "Ольга Кузнецова", description: "Йога для начинающих и стретчинг", gender: "female", city: "Нижний Новгород", price: 1800, yogaStyle: "Для начинающих", photo: mentor7 },
+  { id: 8, name: "Иван Морозов", description: "Бикрам йога и горячая йога", gender: "male", city: "Челябинск", price: 2900, yogaStyle: "Бикрам", photo: mentor8 },
+  { id: 9, name: "Татьяна Павлова", description: "Интегральная йога и философия", gender: "female", city: "Самара", price: 2200, yogaStyle: "Интегральная" },
+];
+
+const cities = [
+  "Москва",
+  "Санкт-Петербург", 
+  "Новосибирск",
+  "Екатеринбург",
+  "Казань",
+  "Нижний Новгород",
+  "Челябинск",
+  "Самара",
+  "Омск",
+  "Ростов-на-Дону",
+  "Уфа",
+  "Красноярск",
+  "Воронеж",
+  "Пермь",
+  "Волгоград"
+];
+
+const yogaStyles = [
+  "Хатха",
+  "Аштанга",
+  "Восстановительная",
+  "Силовая",
+  "Кундалини",
+  "Йогатерапия",
+  "Для начинающих",
+  "Бикрам",
+  "Интегральная",
+  "Виньяса",
+  "Айенгара",
+  "Инь-йога"
+];
+
+const PAGE_SIZE = 3;
+
+const MainScreen = ({ onLogout }) => {
+  // Состояние для пагинации
+  const [page, setPage] = useState(1);
+  
+  // Состояние для уведомлений
+  const [showNotifications, setShowNotifications] = useState(false);
+  
+  // Состояние для активной навигации
+  const [activeNav, setActiveNav] = useState('МЕНТОРЫ');
+  
+  // Состояние для информации о пользователе
+  const [userInfo, setUserInfo] = useState(null);
+  
+  // Состояние для списка заметок пользователя
+  const [notes, setNotes] = useState([]);
+  
+  // Состояние для редактирования заметок
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingText, setEditingText] = useState('');
+  
+  // Моковые уведомления
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: "Завтра в 15:00 у вас сессия с Анной", time: "2 часа назад", read: false, icon: "📅" },
+    { id: 2, text: "Новое сообщение от ментора", time: "5 часов назад", read: false, icon: "✉️" },
+    { id: 3, text: "Ваш ментор оставил отзыв о сессии", time: "Вчера", read: false, icon: "⭐" },
+    { id: 4, text: "Напоминание: оплата сессии", time: "2 дня назад", read: true, icon: "💰" },
+    { id: 5, text: "Новый ментор в вашей категории", time: "3 дня назад", read: true, icon: "👤" }
+  ]);
+  
+  // Фильтры для менторов
+  const [filters, setFilters] = useState({
+    gender: 'all',
+    city: 'all',
+    yogaStyle: 'all',
+    minPrice: '',
+    maxPrice: ''
+  });
+
+  const notificationsRef = useRef(null);
+  const navigate = useNavigate();
+
+  // ========== ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ ==========
+  useEffect(() => {
+    const loadUserData = () => {
+      const user = localStorage.getItem('yogavibe_user');
+      if (user) {
+        const userData = JSON.parse(user);
+        setUserInfo(userData);
+        
+        // Загрузка заметок пользователя
+        loadUserNotes(userData.id);
+      } else {
+        navigate('/login');
+      }
+    };
+
+    loadUserData();
+  }, [navigate]);
+
+  // Загрузка заметок пользователя по его ID
+  const loadUserNotes = (userId) => {
+    try {
+      // Получаем все заметки из localStorage
+      const allNotes = JSON.parse(localStorage.getItem('yogavibe_notes') || '{}');
+      
+      // Получаем заметки конкретного пользователя
+      const userNotes = allNotes[userId] || [];
+      
+      // Преобразуем даты из строк обратно в объекты Date (если нужно)
+      const formattedNotes = userNotes.map(note => ({
+        ...note,
+        createdAt: new Date(note.createdAt).toLocaleString('ru-RU'),
+        updatedAt: new Date(note.updatedAt).toLocaleString('ru-RU')
+      }));
+      
+      setNotes(formattedNotes);
+    } catch (error) {
+      console.error('Ошибка загрузки заметок:', error);
+      setNotes([]);
+    }
+  };
+
+  // Сохранение заметок пользователя
+  const saveUserNotes = (userId, notesToSave) => {
+    try {
+      // Получаем все заметки всех пользователей
+      const allNotes = JSON.parse(localStorage.getItem('yogavibe_notes') || '{}');
+      
+      // Обновляем заметки текущего пользователя
+      allNotes[userId] = notesToSave.map(note => ({
+        ...note,
+        // Сохраняем как ISO строку для БД
+        createdAt: new Date(note.createdAt).toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+      
+      // Сохраняем обратно в localStorage
+      localStorage.setItem('yogavibe_notes', JSON.stringify(allNotes));
+    } catch (error) {
+      console.error('Ошибка сохранения заметок:', error);
+    }
+  };
+
+  // Автосохранение заметок при изменении
+  useEffect(() => {
+    if (userInfo && notes.length > 0) {
+      saveUserNotes(userInfo.id, notes);
+    }
+  }, [notes, userInfo]);
+
+  // ========== ОПЕРАЦИИ С ЗАМЕТКАМИ ==========
+  
+  // Добавление новой заметки
+  const addNote = (text) => {
+    if (!text.trim() || !userInfo) return;
+    
+    const newNote = {
+      id: Date.now(),
+      userId: userInfo.id,
+      text: text.trim(),
+      createdAt: new Date().toLocaleString('ru-RU'),
+      updatedAt: new Date().toLocaleString('ru-RU')
+    };
+    
+    setNotes(prevNotes => [newNote, ...prevNotes]);
+  };
+
+  // Обновление существующей заметки
+  const updateNote = (id, text) => {
+    if (!text.trim()) return;
+    
+    setNotes(prevNotes => 
+      prevNotes.map(note => 
+        note.id === id 
+          ? { 
+              ...note, 
+              text: text.trim(), 
+              updatedAt: new Date().toLocaleString('ru-RU') 
+            }
+          : note
+      )
+    );
+  };
+
+  // Удаление заметки
+  const deleteNote = (id) => {
+    setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
+    
+    // Если удаляем редактируемую заметку, сбрасываем режим редактирования
+    if (editingNoteId === id) {
+      setEditingNoteId(null);
+      setEditingText('');
+    }
+  };
+
+  // Начало редактирования заметки
+  const startEditing = (note) => {
+    setEditingNoteId(note.id);
+    setEditingText(note.text);
+  };
+
+  // Сохранение отредактированной заметки
+  const saveEditing = (id) => {
+    if (!editingText.trim()) return;
+    
+    updateNote(id, editingText);
+    setEditingNoteId(null);
+    setEditingText('');
+  };
+
+  // Отмена редактирования
+  const cancelEditing = () => {
+    setEditingNoteId(null);
+    setEditingText('');
+  };
+
+  // ========== ФИЛЬТРАЦИЯ МЕНТОРОВ ==========
+  const filteredMentors = mentors.filter(mentor => {
+    if (filters.gender !== 'all' && mentor.gender !== filters.gender) return false;
+    if (filters.city !== 'all' && mentor.city !== filters.city) return false;
+    if (filters.yogaStyle !== 'all' && mentor.yogaStyle !== filters.yogaStyle) return false;
+    if (filters.minPrice && mentor.price < parseInt(filters.minPrice)) return false;
+    if (filters.maxPrice && mentor.price > parseInt(filters.maxPrice)) return false;
+    return true;
+  });
+
+  const total = filteredMentors.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const currentMentors = filteredMentors.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Сброс пагинации при изменении фильтров
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
+  // ========== ОБРАБОТЧИКИ УВЕДОМЛЕНИЙ ==========
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(notification => ({
+      ...notification,
+      read: true
+    })));
+  };
+
+  const markAsRead = (id) => {
+    setNotifications(prev => prev.map(notification =>
+      notification.id === id ? { ...notification, read: true } : notification
+    ));
+  };
+
+  // ========== ОБРАБОТЧИКИ НАВИГАЦИИ И ФИЛЬТРОВ ==========
+  const handleNavClick = (navItem, event) => {
+    event.preventDefault();
+    setActiveNav(navItem);
+  };
+
+  const handleFilterChange = (filterName, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      gender: 'all',
+      city: 'all',
+      yogaStyle: 'all',
+      minPrice: '',
+      maxPrice: ''
+    });
+  };
+
+  // Выход из аккаунта
+  const handleLogoutClick = () => {
+    if (window.confirm('Вы уверены, что хотите выйти из аккаунта?')) {
+      onLogout();
+      navigate('/login');
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  // ========== РЕНДЕРИНГ ==========
+  if (!userInfo) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>Загрузка профиля...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`main-bg ${showNotifications ? 'dimmed' : ''}`}>
+      <header className="main-header">
+        <span className="logo">yogavibe</span>
+        <nav className="main-nav">
+          <a 
+            href="#" 
+            className={`main-nav-link ${activeNav === 'МЕНТОРЫ' ? 'active' : ''}`}
+            onClick={(e) => handleNavClick('МЕНТОРЫ', e)}
+          >
+            МЕНТОРЫ
+          </a>
+          <a 
+            href="#" 
+            className={`main-nav-link ${activeNav === 'МОИ ЗАПИСИ' ? 'active' : ''}`}
+            onClick={(e) => handleNavClick('МОИ ЗАПИСИ', e)}
+          >
+            МОИ ЗАПИСИ
+          </a>
+          <a 
+            href="#" 
+            className={`main-nav-link ${activeNav === 'ЗАМЕТКИ' ? 'active' : ''}`}
+            onClick={(e) => handleNavClick('ЗАМЕТКИ', e)}
+          >
+            ЗАМЕТКИ
+          </a>
+          <a 
+            href="#" 
+            className={`main-nav-link ${activeNav === 'МОЯ АНКЕТА' ? 'active' : ''}`}
+            onClick={(e) => handleNavClick('МОЯ АНКЕТА', e)}
+          >
+            МОЯ АНКЕТА
+          </a>
+        </nav>
+        <div 
+          className="mail-btn" 
+          onClick={toggleNotifications}
+        />
+        
+        {/* Выпадающее меню уведомлений */}
+        {showNotifications && (
+          <div className="notifications-dropdown" ref={notificationsRef}>
+            <div className="notifications-header">
+              <h3>Уведомления</h3>
+              {unreadCount > 0 && (
+                <span className="notifications-count">{unreadCount} новых</span>
+              )}
+            </div>
+            
+            <div className="notifications-list">
+              {notifications.map((notification) => (
+                <div 
+                  className={`notification-item ${notification.read ? 'read' : 'unread'}`} 
+                  key={notification.id}
+                  onClick={() => markAsRead(notification.id)}
+                >
+                  <div className="notification-icon">{notification.icon}</div>
+                  <div className="notification-content">
+                    <p>{notification.text}</p>
+                    <span className="notification-time">{notification.time}</span>
+                  </div>
+                  {!notification.read && <div className="unread-dot"></div>}
+                </div>
+              ))}
+            </div>
+            
+            <div className="notifications-actions">
+              <button className="read-all-btn" onClick={markAllAsRead}>
+                Прочитать все
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
+      
+      {/* Контент страницы в зависимости от активной навигации */}
+      {activeNav === 'МЕНТОРЫ' && (
+        <div className="mentors-page">
+          {/* Фильтры слева */}
+          <aside className="filters-sidebar">
+            <div className="filters-header">
+              <h3>Фильтры</h3>
+            </div>
+            
+            <div className="filter-group">
+              <label className="filter-label">Пол</label>
+              <select 
+                value={filters.gender} 
+                onChange={(e) => handleFilterChange('gender', e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">Любой</option>
+                <option value="female">Женский</option>
+                <option value="male">Мужской</option>
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label className="filter-label">Город</label>
+              <select 
+                value={filters.city} 
+                onChange={(e) => handleFilterChange('city', e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">Любой город</option>
+                {cities.map(city => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label className="filter-label">Стиль йоги</label>
+              <select 
+                value={filters.yogaStyle} 
+                onChange={(e) => handleFilterChange('yogaStyle', e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">Любой стиль</option>
+                {yogaStyles.map(style => (
+                  <option key={style} value={style}>{style}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label className="filter-label">Цена за сессию</label>
+              <div className="price-inputs">
+                <input
+                  type="number"
+                  placeholder="От"
+                  value={filters.minPrice}
+                  onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                  className="price-input"
+                />
+                <input
+                  type="number"
+                  placeholder="До"
+                  value={filters.maxPrice}
+                  onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                  className="price-input"
+                />
+              </div>
+            </div>
+            
+            <div className="results-info">
+              <div className="results-count">
+                Найдено: <strong>{filteredMentors.length}</strong> менторов
+              </div>
+            </div>
+
+            <button className="clear-filters-btn" onClick={clearFilters}>
+                Сбросить
+            </button>
+
+            {/* Кнопка выхода из аккаунта */}
+            <div className="sidebar-footer">
+              <button className="logout-btn" onClick={handleLogoutClick}>
+                <span className="logout-icon">↩</span>
+                Выйти из аккаунта
+              </button>
+            </div>
+          </aside>
+
+          {/* Основной контент с менторами */}
+          <main className="mentors-main">
+            <div className="mentors-area">
+              {currentMentors.length > 0 ? (
+                currentMentors.map((mentor) => (
+                  <div className="mentor-card" key={mentor.id}>
+                    <div className="mentor-img">
+                      <img src={mentor.photo} alt={mentor.name} />
+                    </div>
+                    <div className="mentor-info">
+                      <div className="mentor-name">{mentor.name}</div>
+                      <div className="mentor-details">
+                        <span className="mentor-city">{mentor.city}</span>
+                        <span className="mentor-price">{mentor.price} ₽/сессия</span>
+                      </div>
+                      <div className="mentor-yoga-style">
+                        <span className="yoga-style-tag">{mentor.yogaStyle}</span>
+                      </div>
+                    </div>
+                    <div className="mentor-text">
+                      <b>{mentor.description}</b>
+                    </div>
+                    <button className="more-btn">ПОДРОБНЕЕ</button>
+                  </div>
+                ))
+              ) : (
+                <div className="no-results">
+                  <p>По вашему запросу менторов не найдено</p>
+                  <button className="clear-filters-btn" onClick={clearFilters}>
+                    Сбросить фильтры
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {totalPages > 1 && (
+              <footer className="main-footer">
+                <div className="pagination">
+                  <button 
+                    className="page-btn" 
+                    disabled={page === 1} 
+                    onClick={() => setPage(page - 1)}
+                  >
+                    &lt;
+                  </button>
+                  <span>
+                    {Array.from({length: totalPages}, (_, i) => (
+                      <button
+                        key={i}
+                        className={`page-num${page === i+1 ? " selected" : ""}`}
+                        onClick={() => setPage(i + 1)}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </span>
+                  <button 
+                    className="page-btn" 
+                    disabled={page === totalPages} 
+                    onClick={() => setPage(page + 1)}
+                  >
+                    &gt;
+                  </button>
+                </div>
+              </footer>
+            )}
+          </main>
+        </div>
+      )}
+      
+      {activeNav === 'МОИ ЗАПИСИ' && (
+        <div className="page-content">
+          <h2>Мои записи</h2>
+          <p>Здесь будут отображаться ваши предстоящие и завершенные сессии</p>
+        </div>
+      )}
+      
+      {activeNav === 'ЗАМЕТКИ' && (
+        <NotesScreen 
+          notes={notes}
+          editingNoteId={editingNoteId}
+          editingText={editingText}
+          onAddNote={addNote}
+          onUpdateNote={updateNote}
+          onDeleteNote={deleteNote}
+          onStartEditing={startEditing}
+          onSaveEditing={saveEditing}
+          onCancelEditing={cancelEditing}
+          onSetEditingText={setEditingText}
+        />
+      )}
+      
+      {activeNav === 'МОЯ АНКЕТА' && (
+        <div className="page-content">
+          <h2>Моя анкета</h2>
+          <p>Здесь вы можете редактировать свою анкету и настройки профиля</p>
+          <div className="profile-info">
+            <p><strong>Имя пользователя:</strong> {userInfo.username}</p>
+            <p><strong>Email:</strong> {userInfo.email}</p>
+            <p><strong>ID пользователя:</strong> {userInfo.id}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MainScreen;

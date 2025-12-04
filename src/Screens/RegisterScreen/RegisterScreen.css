@@ -256,7 +256,7 @@
   align-items: center;
   gap: 0.625rem;
   width: 100%;
-  margin-top: 0.625rem;
+  margin-top: 0.63rem;
 }
 
 /* Ссылка на страницу входа */
@@ -273,40 +273,6 @@
 .login-link:hover {
   color: #e8acb8;
   text-decoration: underline;
-}
-
-/* Кнопка для демо-данных */
-.demo-button {
-  background: transparent;
-  border: 0.0625rem solid #F6C0CA;
-  color: #F6C0CA;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.demo-button:hover:not(:disabled) {
-  background: rgba(246, 192, 202, 0.1);
-  transform: translateY(-0.0625rem);
-}
-
-.demo-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Подсказка для пароля */
-.password-hint {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.75rem;
-  color: #ffebdc;
-  margin-top: 0.625rem;
-  text-align: center;
-  opacity: 0.8;
 }
 
 /* Кнопка возврата на главную */

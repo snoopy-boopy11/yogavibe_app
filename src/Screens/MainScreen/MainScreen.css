@@ -1,0 +1,764 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Source+Serif+Pro:wght@400;700;900&display=swap');
+
+/* Фон для всей страницы */
+.main-bg {
+  min-height: 100vh;
+  background-image: url('../../../public/assets/images/background_2.png');
+  background-size: cover;
+  background-position: center;
+  font-family: 'Montserrat',serif;
+  transition: filter 0.3s ease;
+}
+
+.main-bg.dimmed {
+  filter: brightness(0.8);
+}
+
+/* Хедер */
+.main-header {
+  width: 100%;
+  background: #e4d8d2;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 60px 0 30px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.logo {
+  font-size: 1.3rem;
+  font-family: 'Montserrat', serif;
+  color: #69505c;
+  font-weight: 500;
+  text-align: left;
+}
+
+.main-nav {
+  display: flex;
+  gap: 36px;
+  margin-left: auto;
+  margin-right: 80px;
+}
+
+.main-nav-link {
+  font-size: 1.1rem;
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 900;
+  color: #69505c;
+  text-decoration: none;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.main-nav-link:hover {
+  color: #69505c;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 3px;
+}
+
+.main-nav-link.active {
+  color: #69505c;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 3px;
+}
+
+.mail-btn {
+  width: 32px;
+  height: 32px;
+  background: url('../MainScreen/mail-icon.svg') no-repeat center center;
+  background-size: contain;
+  margin-right: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1001;
+}
+
+.mail-btn:hover {
+  filter: drop-shadow(0 4px 8px rgba(105, 80, 92, 0.3));
+  transform: translateY(-2px);
+}
+
+/* Страница менторов с фильтрами слева */
+.mentors-page {
+  display: flex;
+  min-height: calc(100vh - 90px);
+}
+
+/* Сайдбар с фильтрами */
+.filters-sidebar {
+  width: 300px;
+  background: rgba(228, 216, 210, 0.6);
+  padding: 30px 25px;
+}
+
+.filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #69505c;
+}
+
+.filters-header h3 {
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 900;
+  color: #69505c;
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.filter-group {
+  margin-bottom: 25px;
+}
+
+.filter-label {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  color: #69505c;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.filter-select {
+  width: 230px;
+  height: 47px;
+  padding: 12px 15px;
+  border: 2px solid #ded8d2;
+  border-radius: 10px;
+  background: white;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  color: #69505c;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #69505c;
+}
+
+.price-inputs {
+  gap: 10px;
+}
+
+.price-input {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid #ded8d2;
+  border-radius: 10px;
+  background: white;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  color: #69505c;
+  transition: border-color 0.3s ease;
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: #69505c;
+}
+
+.price-input::placeholder {
+  color: #999;
+}
+
+.clear-filters-btn {
+  background: #69505c;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin-top: 30px;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.clear-filters-btn:hover {
+  background: #35252c;
+}
+
+.results-info {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #69505c;
+}
+
+.results-count {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  color: #69505c;
+  font-size: 1rem;
+}
+
+/* Основной контент с менторами */
+.mentors-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 40px;
+}
+
+.mentors-area {
+  display: grid;
+  grid-template-columns: repeat(3, 340px); /* Фиксированные 3 колонки */
+  gap: 30px;
+  flex: 1;
+  justify-content: center; /* Центрирование карточек */
+  margin-bottom: 40px;
+}
+
+.mentor-card {
+  background: #ded8d2cc;
+  border-radius: 32px;
+  width: 340px; /* Фиксированная ширина */
+  padding: 32px 24px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  box-shadow: 0 5px 32px rgba(194, 169, 169, 0.12);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  flex-shrink: 0; /* Запрет на сжатие */
+}
+
+.mentor-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 40px rgba(194, 169, 169, 0.2);
+}
+
+.mentor-img {
+  width: 100%;
+  height: 350px; /* Измененная высота */
+  background: #fff;
+  border-radius: 18px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.mentor-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.3s ease;
+}
+
+
+.mentor-info {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.mentor-name {
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 900;
+  color: #69505c;
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+}
+
+.mentor-details {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  color: #35252c;
+}
+
+.mentor-city {
+  font-weight: 600;
+}
+
+.mentor-price {
+  font-weight: 700;
+  color: #69505c;
+}
+
+.mentor-text {
+  margin-bottom: 24px;
+  color: #1d151a;
+  font-size: 1.03rem;
+  font-family: 'Montserrat', serif;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-align: left;
+  width: 100%;
+  line-height: 1.5;
+}
+
+.more-btn {
+  margin-top: auto;
+  width: 100%;
+  height: 48px;
+  border-radius: 20px;
+  border: none;
+  background: #69505c;
+  color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: 1.22rem;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.more-btn:hover {
+  background: #35252c;
+}
+
+.no-results {
+  text-align: center;
+  padding: 60px 20px;
+  width: 100%;
+  grid-column: 1 / -1;
+}
+
+.no-results p {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  color: #69505c;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.main-footer {
+  width: 100%;
+  background: none;
+  display: flex;
+  justify-content: center; /* Центрирование пагинации */
+  align-items: center;
+  min-height: 78px;
+  margin-top: auto; /* Прижимаем к низу */
+  padding-bottom: 20px;
+}
+
+/* Пагинация */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  border-radius: 18px;
+  background: #e4d8d2d9;
+  font-family: 'Montserrat', serif;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.page-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #69505c;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 10px;
+}
+
+.page-btn:disabled {
+  color: #c6b3b6;
+  cursor: default;
+}
+
+.page-num {
+  background: none;
+  border: none;
+  font-size: 1.07rem;
+  font-family: 'Montserrat', serif;
+  color: #69505c;
+  margin-right: 2px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.page-num.selected,
+.page-num:hover {
+  background: #ded8d2;
+  color: #35252c;
+}
+
+/* Контент других страниц */
+.page-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 90px);
+  padding: 40px;
+  text-align: center;
+}
+
+.page-content h2 {
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 900;
+  color: #69505c;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.page-content p {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  color: #35252c;
+  font-size: 1.2rem;
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+/* Выпадающее меню уведомлений */
+.notifications-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 20px;
+  width: 380px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.notifications-header h3 {
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 900;
+  color: #69505c;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.notifications-count {
+  background: #F6C0CA;
+  color: #69505c;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.notifications-actions {
+  padding: 10px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: right;
+}
+
+.read-all-btn {
+  background: none;
+  border: none;
+  color: #69505c;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.read-all-btn:hover {
+  background: #f5f5f5;
+  color: #35252c;
+}
+
+.notifications-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.notification-item:hover {
+  background-color: #f9f9f9;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.unread {
+  background-color: #f8f6ff;
+}
+
+.notification-item.unread:hover {
+  background-color: #f0edff;
+}
+
+.notification-icon {
+  font-size: 1.2rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-content p {
+  margin: 0 0 5px 0;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.4;
+}
+
+.notification-item.unread .notification-content p {
+  font-weight: 700;
+}
+
+.notification-time {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  background: #69505c;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+/* Добавьте эти стили в конец файла MainScreen.css */
+
+.mentor-yoga-style {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.yoga-style-tag {
+  display: inline-block;
+  background: #F6C0CA;
+  color: #69505C;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(246, 192, 202, 0.3);
+  transition: all 0.3s ease;
+}
+
+.yoga-style-tag:hover {
+  background: #e8acb8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(246, 192, 202, 0.4);
+}
+
+/* Адаптивность для тега стиля йоги */
+@media (max-width: 480px) {
+  .yoga-style-tag {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+  }
+}
+
+/* Добавить в конец MainScreen.css */
+
+/* Стили для информации о пользователе */
+.user-info {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.user-name {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  color: #69505c;
+  font-size: 1rem;
+  padding: 5px 15px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+}
+
+/* Футер в сайдбаре */
+.sidebar-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 2px solid #69505c;
+}
+
+.logout-btn {
+  width: 230px;
+  background: transparent;
+  border: 2px solid #69505c;
+  color: #69505c;
+  padding: 12px 20px;
+  margin-top: 70px;
+  border-radius: 12px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.logout-btn:hover {
+  background: #69505c;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(105, 80, 92, 0.3);
+}
+
+.logout-icon {
+  font-size: 1.2rem;
+  transform: rotate(180deg);
+}
+
+/* Стили для страницы профиля */
+.profile-info {
+  background: rgba(228, 216, 210, 0.7);
+  border-radius: 15px;
+  padding: 25px;
+  margin-top: 30px;
+  max-width: 600px;
+  text-align: left;
+}
+
+.profile-info p {
+  margin-bottom: 15px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.1rem;
+  color: #35252c;
+}
+
+.profile-info strong {
+  color: #69505c;
+  font-weight: 700;
+}
+
+/* Стили для экрана загрузки */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(140deg, #f9cdd6 0%, #eebac9 100%);
+  background-image: url('../../../public/assets/images/background_2.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #69505c;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-screen p {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  color: #69505c;
+  font-size: 1.2rem;
+}
+
+/* Адаптивность для новых элементов */
+@media (max-width: 1024px) {
+  .user-info {
+    position: static;
+    transform: none;
+    margin-left: 20px;
+    order: 1;
+  }
+  
+  .main-header {
+    flex-wrap: wrap;
+    padding: 0 20px;
+    height: auto;
+    min-height: 90px;
+  }
+  
+  .main-nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin: 15px 0;
+  }
+  
+  .mail-btn {
+    order: 2;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-name {
+    font-size: 0.9rem;
+    padding: 4px 12px;
+  }
+  
+  .logout-btn {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-name {
+    font-size: 0.8rem;
+  }
+  
+  .logout-btn {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+}

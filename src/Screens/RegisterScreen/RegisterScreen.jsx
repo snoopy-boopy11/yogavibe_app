@@ -270,15 +270,6 @@ const RegisterScreen = ({ onRegister }) => {
             <Link to="/login" className="login-link">
               Уже есть аккаунт? Войти
             </Link>
-            
-            <button 
-              type="button"
-              className="demo-button"
-              onClick={handleDemoFill}
-              disabled={loading}
-            >
-              Заполнить демо-данные
-            </button>
           </div>
         </form>
       </div>

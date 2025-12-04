@@ -207,14 +207,12 @@
   font-size: 1.125rem;
   font-weight: bold;
   flex-shrink: 0;
-  line-height: 1; /* ← ДОБАВИЛ для выравнивания */
+  line-height: 1;
 }
-
-/* УДАЛЯЕМ дублирующиеся стили: */
-/* .error-message span - УДАЛИТЬ ЭТОТ БЛОК ПОЛНОСТЬЮ */
 
 /* Дополнительные опции */
 .login-options {
+  margin-top: 15px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -236,30 +234,6 @@
 .register:hover {
   color: #e8acb8;
   text-decoration: underline;
-}
-
-/* Кнопка для демо-входа */
-.demo-button {
-  background: transparent;
-  border: 0.0625rem solid #F6C0CA;
-  color: #F6C0CA;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.demo-button:hover:not(:disabled) {
-  background: rgba(246, 192, 202, 0.1);
-  transform: translateY(-0.0625rem);
-}
-
-.demo-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* Кнопка возврата на главную */

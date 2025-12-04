@@ -1,4 +1,4 @@
-// src/screens/LoginScreen/LoginScreen.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ
+// src/screens/LoginScreen/LoginScreen.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './LoginScreen.css';
@@ -67,7 +67,13 @@ const LoginScreen = ({ onLogin }) => {
     setError('');
 
     try {
-      const result = await onLogin(formData);
+      // ИСПРАВЛЕНИЕ 1: Правильный формат данных для передачи в onLogin
+      const credentials = {
+        login: formData.login,
+        password: formData.password
+      };
+      
+      const result = await onLogin(credentials);
       
       if (result.success) {
         navigate('/main');
@@ -94,13 +100,14 @@ const LoginScreen = ({ onLogin }) => {
     navigate('/');
   };
 
-  const clearForm = () => {
-    setFormData({
-      login: '',
-      password: ''
-    });
-    setError('');
-  };
+  // ИСПРАВЛЕНИЕ 2: Убрал неиспользуемую функцию clearForm
+  // const clearForm = () => {
+  //   setFormData({
+  //     login: '',
+  //     password: ''
+  //   });
+  //   setError('');
+  // };
 
   return (
     <div className="login-screen">
@@ -180,21 +187,11 @@ const LoginScreen = ({ onLogin }) => {
           </button>
           
           <div className="login-options">
+            {/* ИСПРАВЛЕНИЕ 3: Добавил div для структуры CSS */}
             <div className="options-left">
               <Link to="/register" className="register">
                 Регистрация
               </Link>
-            </div>
-            
-            <div className="options-right">
-              <button 
-                type="button"
-                className="demo-button"
-                onClick={fillTestData}
-                disabled={loading}
-              >
-                Тестовый вход
-              </button>
             </div>
           </div>
         </form>
