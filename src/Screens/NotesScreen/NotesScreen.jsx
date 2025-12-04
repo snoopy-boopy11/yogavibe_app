@@ -1,5 +1,4 @@
-// src/screens/NotesScreen/NotesScreen.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './NotesScreen.css';
 
 const NotesScreen = ({ 
@@ -14,19 +13,26 @@ const NotesScreen = ({
   onCancelEditing,
   onSetEditingText 
 }) => {
-  // Состояние для новой заметки (локальное, так как только для формы ввода)
+  // Состояние для новой заметки
   const [newNote, setNewNote] = useState('');
+
+  // Реф для отслеживания кликов вне области редактирования
+  const editModeRef = useRef(null);
 
   // Добавление новой заметки
   const handleAddNote = () => {
-    if (newNote.trim() === '') return;
-    onAddNote(newNote);
+    const trimmedText = newNote.trim();
+    if (trimmedText === '') return;
+    
+    onAddNote(trimmedText);
     setNewNote('');
   };
 
   // Удаление заметки
   const handleDeleteNote = (id) => {
-    onDeleteNote(id);
+    if (window.confirm('Вы уверены, что хотите удалить эту заметку?')) {
+      onDeleteNote(id);
+    }
   };
 
   // Обработка нажатия Enter для добавления заметки
@@ -39,13 +45,38 @@ const NotesScreen = ({
 
   // Обработчик клика вне поля редактирования
   const handleClickOutside = (e) => {
-    if (editingNoteId && !e.target.closest('.note-edit-mode')) {
-      onCancelEditing();
+    if (editingNoteId && editModeRef.current && !editModeRef.current.contains(e.target)) {
+      if (editingText.trim() !== '') {
+        onSaveEditing(editingNoteId);
+      } else {
+        onCancelEditing();
+      }
     }
   };
 
+  // Добавляем обработчик кликов при монтировании
+  useEffect(() => {
+    if (editingNoteId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [editingNoteId, editingText]);
+
+  // Фокус на поле ввода при редактировании
+  useEffect(() => {
+    if (editingNoteId && editModeRef.current) {
+      const textarea = editModeRef.current.querySelector('.note-edit-textarea');
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      }
+    }
+  }, [editingNoteId]);
+
   return (
-    <div className="notes-page" onClick={handleClickOutside}>
+    <div className="notes-page">
       <div className="notes-container">
         {/* Заголовок раздела заметок */}
         <div className="notes-header">
@@ -65,14 +96,17 @@ const NotesScreen = ({
               rows="4"
               aria-label="Поле для ввода новой заметки"
             />
-            <button 
-              onClick={handleAddNote}
-              disabled={newNote.trim() === ''}
-              className="add-note-btn"
-              aria-label="Добавить заметку"
-            >
-              Добавить заметку
-            </button>
+            <div className="note-input-actions">
+              <button 
+                onClick={handleAddNote}
+                disabled={newNote.trim() === ''}
+                className="add-note-btn"
+                aria-label="Добавить заметку"
+              >
+                Добавить заметку
+              </button>
+              <span className="char-count">{newNote.length}/1000</span>
+            </div>
           </div>
         </div>
 
@@ -92,15 +126,20 @@ const NotesScreen = ({
                   <div key={note.id} className="note-card">
                     {editingNoteId === note.id ? (
                       // Режим редактирования заметки
-                      <div className="note-edit-mode">
+                      <div className="note-edit-mode" ref={editModeRef}>
                         <textarea
                           value={editingText}
                           onChange={(e) => onSetEditingText(e.target.value)}
+                          onKeyDown={(e) => handleEditKeyDown(e, note.id)}
                           className="note-edit-textarea"
                           rows="4"
-                          autoFocus
+                          maxLength="1000"
                           aria-label="Редактирование заметки"
                         />
+                        <div className="note-edit-info">
+                          <span className="edit-char-count">{editingText.length}/1000</span>
+                          <div className="edit-hint">Ctrl+Enter для сохранения, Esc для отмены</div>
+                        </div>
                         <div className="note-edit-actions">
                           <button 
                             onClick={() => onSaveEditing(note.id)}
@@ -126,14 +165,16 @@ const NotesScreen = ({
                           <p>{note.text}</p>
                         </div>
                         <div className="note-footer">
-                          <span className="note-date">
-                            Создано: {note.createdAt}
+                          <div className="note-dates">
+                            <span className="note-date">
+                              Создано: {note.createdAt}
+                            </span>
                             {note.updatedAt !== note.createdAt && (
                               <span className="note-updated">
-                                (изменено: {note.updatedAt})
+                                Изменено: {note.updatedAt}
                               </span>
                             )}
-                          </span>
+                          </div>
                           <div className="note-actions">
                             <button 
                               onClick={() => onStartEditing(note)}
