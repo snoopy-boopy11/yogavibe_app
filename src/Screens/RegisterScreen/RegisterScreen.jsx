@@ -97,12 +97,12 @@ const RegisterScreen = ({ onRegister }) => {
       if (result.success) {
         navigate('/main');
       } else {
-        if (result.message.includes('email')) {
+        if (result.message && result.message.includes('email')) {
           setErrors({ email: result.message });
-        } else if (result.message.includes('имя')) {
+        } else if (result.message && result.message.includes('имя')) {
           setErrors({ username: result.message });
         } else {
-          setErrors({ general: result.message });
+          setErrors({ general: result.message || 'Ошибка регистрации' });
         }
       }
     } catch (error) {
@@ -111,17 +111,6 @@ const RegisterScreen = ({ onRegister }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoFill = () => {
-    const randomId = Date.now().toString().slice(-4);
-    setFormData({
-      username: 'yogiuser',
-      email: `yogi${randomId}@example.com`,
-      password: 'yoga123',
-      confirmPassword: 'yoga123'
-    });
-    setErrors({});
   };
 
   const goToWelcome = () => {
