@@ -60,7 +60,7 @@
 
 /* Заголовок формы */
 .entry {
-  font-family: 'Montserrat', serif; /* ← ОШИБКА: должно быть sans-serif */
+  font-family: 'Montserrat', serif;
   font-weight: 900;
   font-size: clamp(1.1rem, 2.5vw, 1.5rem);
   text-align: center;
@@ -184,7 +184,7 @@
   cursor: not-allowed;
 }
 
-/* Сообщение об ошибке - ОБЪЕДИНЯЕМ ВСЕ СТИЛИ */
+/* Сообщение об ошибке */
 .error-message {
   background: rgba(244, 67, 54, 0.1);
   border: 0.0625rem solid #F44336;
