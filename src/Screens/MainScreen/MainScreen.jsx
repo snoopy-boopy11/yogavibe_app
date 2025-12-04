@@ -1,4 +1,3 @@
-// src/screens/MainScreen/MainScreen.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MainScreen.css';
@@ -22,7 +21,7 @@ const mentors = [
   { id: 6, name: "Сергей Николаев", description: "Йогатерапия и работа с травмами", gender: "male", city: "Казань", price: 2700, yogaStyle: "Йогатерапия", photo: mentor6 },
   { id: 7, name: "Ольга Кузнецова", description: "Йога для начинающих и стретчинг", gender: "female", city: "Нижний Новгород", price: 1800, yogaStyle: "Для начинающих", photo: mentor7 },
   { id: 8, name: "Иван Морозов", description: "Бикрам йога и горячая йога", gender: "male", city: "Челябинск", price: 2900, yogaStyle: "Бикрам", photo: mentor8 },
-  { id: 9, name: "Татьяна Павлова", description: "Интегральная йога и философия", gender: "female", city: "Самара", price: 2200, yogaStyle: "Интегральная" },
+  { id: 9, name: "Татьяна Павлова", description: "Интегральная йога и философия", gender: "female", city: "Самара", price: 2200, yogaStyle: "Интегральная", photo: null },
 ];
 
 const cities = [
@@ -60,7 +59,7 @@ const yogaStyles = [
 
 const PAGE_SIZE = 3;
 
-const MainScreen = ({ onLogout }) => {
+const MainScreen = ({ user, onLogout }) => {
   // Состояние для пагинации
   const [page, setPage] = useState(1);
   
@@ -103,21 +102,21 @@ const MainScreen = ({ onLogout }) => {
 
   // ========== ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ ==========
   useEffect(() => {
-    const loadUserData = () => {
-      const user = localStorage.getItem('yogavibe_user');
-      if (user) {
-        const userData = JSON.parse(user);
+    if (user) {
+      setUserInfo(user);
+      loadUserNotes(user.id);
+    } else {
+      // Если user не передан, проверяем localStorage
+      const storedUser = localStorage.getItem('yogavibe_user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
         setUserInfo(userData);
-        
-        // Загрузка заметок пользователя
         loadUserNotes(userData.id);
       } else {
         navigate('/login');
       }
-    };
-
-    loadUserData();
-  }, [navigate]);
+    }
+  }, [user, navigate]);
 
   // Загрузка заметок пользователя по его ID
   const loadUserNotes = (userId) => {
@@ -128,12 +127,23 @@ const MainScreen = ({ onLogout }) => {
       // Получаем заметки конкретного пользователя
       const userNotes = allNotes[userId] || [];
       
-      // Преобразуем даты из строк обратно в объекты Date (если нужно)
-      const formattedNotes = userNotes.map(note => ({
-        ...note,
-        createdAt: new Date(note.createdAt).toLocaleString('ru-RU'),
-        updatedAt: new Date(note.updatedAt).toLocaleString('ru-RU')
-      }));
+      // Преобразуем даты из строк обратно в объекты Date
+      const formattedNotes = userNotes.map(note => {
+        try {
+          return {
+            ...note,
+            createdAt: note.createdAt ? new Date(note.createdAt).toLocaleString('ru-RU') : 'Нет даты',
+            updatedAt: note.updatedAt ? new Date(note.updatedAt).toLocaleString('ru-RU') : 'Нет даты'
+          };
+        } catch (dateError) {
+          console.error('Ошибка преобразования даты:', dateError);
+          return {
+            ...note,
+            createdAt: 'Нет даты',
+            updatedAt: 'Нет даты'
+          };
+        }
+      });
       
       setNotes(formattedNotes);
     } catch (error) {
@@ -142,33 +152,52 @@ const MainScreen = ({ onLogout }) => {
     }
   };
 
-  // Сохранение заметок пользователя
-  const saveUserNotes = (userId, notesToSave) => {
+  // Функция сохранения заметки в localStorage
+  const saveNoteToStorage = (note) => {
     try {
-      // Получаем все заметки всех пользователей
       const allNotes = JSON.parse(localStorage.getItem('yogavibe_notes') || '{}');
+      const userNotes = allNotes[note.userId] || [];
       
-      // Обновляем заметки текущего пользователя
-      allNotes[userId] = notesToSave.map(note => ({
-        ...note,
-        // Сохраняем как ISO строку для БД
-        createdAt: new Date(note.createdAt).toISOString(),
-        updatedAt: new Date().toISOString()
-      }));
+      // Ищем существующую заметку
+      const existingIndex = userNotes.findIndex(n => n.id === note.id);
       
-      // Сохраняем обратно в localStorage
+      if (existingIndex >= 0) {
+        // Обновляем существующую
+        userNotes[existingIndex] = {
+          ...note,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      } else {
+        // Добавляем новую
+        userNotes.unshift({
+          ...note,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      
+      allNotes[note.userId] = userNotes;
       localStorage.setItem('yogavibe_notes', JSON.stringify(allNotes));
     } catch (error) {
-      console.error('Ошибка сохранения заметок:', error);
+      console.error('Ошибка сохранения заметки:', error);
     }
   };
 
-  // Автосохранение заметок при изменении
-  useEffect(() => {
-    if (userInfo && notes.length > 0) {
-      saveUserNotes(userInfo.id, notes);
+  // Функция удаления заметки из localStorage
+  const deleteNoteFromStorage = (userId, noteId) => {
+    try {
+      const allNotes = JSON.parse(localStorage.getItem('yogavibe_notes') || '{}');
+      const userNotes = allNotes[userId] || [];
+      const updatedNotes = userNotes.filter(note => note.id !== noteId);
+      allNotes[userId] = updatedNotes;
+      localStorage.setItem('yogavibe_notes', JSON.stringify(allNotes));
+      return true;
+    } catch (error) {
+      console.error('Ошибка удаления заметки:', error);
+      return false;
     }
-  }, [notes, userInfo]);
+  };
 
   // ========== ОПЕРАЦИИ С ЗАМЕТКАМИ ==========
   
@@ -185,28 +214,38 @@ const MainScreen = ({ onLogout }) => {
     };
     
     setNotes(prevNotes => [newNote, ...prevNotes]);
+    saveNoteToStorage(newNote);
   };
 
   // Обновление существующей заметки
   const updateNote = (id, text) => {
-    if (!text.trim()) return;
+    if (!text.trim() || !userInfo) return;
+    
+    const updatedNote = {
+      id,
+      userId: userInfo.id,
+      text: text.trim(),
+      createdAt: new Date().toLocaleString('ru-RU'),
+      updatedAt: new Date().toLocaleString('ru-RU')
+    };
     
     setNotes(prevNotes => 
       prevNotes.map(note => 
-        note.id === id 
-          ? { 
-              ...note, 
-              text: text.trim(), 
-              updatedAt: new Date().toLocaleString('ru-RU') 
-            }
-          : note
+        note.id === id ? updatedNote : note
       )
     );
+    
+    saveNoteToStorage(updatedNote);
   };
 
   // Удаление заметки
   const deleteNote = (id) => {
     setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
+    
+    // Удаляем из localStorage
+    if (userInfo) {
+      deleteNoteFromStorage(userInfo.id, id);
+    }
     
     // Если удаляем редактируемую заметку, сбрасываем режим редактирования
     if (editingNoteId === id) {
@@ -241,8 +280,14 @@ const MainScreen = ({ onLogout }) => {
     if (filters.gender !== 'all' && mentor.gender !== filters.gender) return false;
     if (filters.city !== 'all' && mentor.city !== filters.city) return false;
     if (filters.yogaStyle !== 'all' && mentor.yogaStyle !== filters.yogaStyle) return false;
-    if (filters.minPrice && mentor.price < parseInt(filters.minPrice)) return false;
-    if (filters.maxPrice && mentor.price > parseInt(filters.maxPrice)) return false;
+    
+    // Обработка ценового фильтра
+    const minPrice = filters.minPrice ? parseInt(filters.minPrice) : null;
+    const maxPrice = filters.maxPrice ? parseInt(filters.maxPrice) : null;
+    
+    if (minPrice !== null && mentor.price < minPrice) return false;
+    if (maxPrice !== null && mentor.price > maxPrice) return false;
+    
     return true;
   });
 
@@ -366,6 +411,7 @@ const MainScreen = ({ onLogout }) => {
         <div 
           className="mail-btn" 
           onClick={toggleNotifications}
+          title="Уведомления"
         />
         
         {/* Выпадающее меню уведомлений */}
@@ -384,6 +430,13 @@ const MainScreen = ({ onLogout }) => {
                   className={`notification-item ${notification.read ? 'read' : 'unread'}`} 
                   key={notification.id}
                   onClick={() => markAsRead(notification.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      markAsRead(notification.id);
+                    }
+                  }}
                 >
                   <div className="notification-icon">{notification.icon}</div>
                   <div className="notification-content">
@@ -419,6 +472,7 @@ const MainScreen = ({ onLogout }) => {
                 value={filters.gender} 
                 onChange={(e) => handleFilterChange('gender', e.target.value)}
                 className="filter-select"
+                aria-label="Фильтр по полу"
               >
                 <option value="all">Любой</option>
                 <option value="female">Женский</option>
@@ -432,6 +486,7 @@ const MainScreen = ({ onLogout }) => {
                 value={filters.city} 
                 onChange={(e) => handleFilterChange('city', e.target.value)}
                 className="filter-select"
+                aria-label="Фильтр по городу"
               >
                 <option value="all">Любой город</option>
                 {cities.map(city => (
@@ -446,6 +501,7 @@ const MainScreen = ({ onLogout }) => {
                 value={filters.yogaStyle} 
                 onChange={(e) => handleFilterChange('yogaStyle', e.target.value)}
                 className="filter-select"
+                aria-label="Фильтр по стилю йоги"
               >
                 <option value="all">Любой стиль</option>
                 {yogaStyles.map(style => (
@@ -463,6 +519,8 @@ const MainScreen = ({ onLogout }) => {
                   value={filters.minPrice}
                   onChange={(e) => handleFilterChange('minPrice', e.target.value)}
                   className="price-input"
+                  aria-label="Минимальная цена"
+                  min="0"
                 />
                 <input
                   type="number"
@@ -470,6 +528,8 @@ const MainScreen = ({ onLogout }) => {
                   value={filters.maxPrice}
                   onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
                   className="price-input"
+                  aria-label="Максимальная цена"
+                  min="0"
                 />
               </div>
             </div>
@@ -480,13 +540,13 @@ const MainScreen = ({ onLogout }) => {
               </div>
             </div>
 
-            <button className="clear-filters-btn" onClick={clearFilters}>
+            <button className="clear-filters-btn" onClick={clearFilters} aria-label="Сбросить фильтры">
                 Сбросить
             </button>
 
             {/* Кнопка выхода из аккаунта */}
             <div className="sidebar-footer">
-              <button className="logout-btn" onClick={handleLogoutClick}>
+              <button className="logout-btn" onClick={handleLogoutClick} aria-label="Выйти из аккаунта">
                 <span className="logout-icon">↩</span>
                 Выйти из аккаунта
               </button>
@@ -500,7 +560,15 @@ const MainScreen = ({ onLogout }) => {
                 currentMentors.map((mentor) => (
                   <div className="mentor-card" key={mentor.id}>
                     <div className="mentor-img">
-                      <img src={mentor.photo} alt={mentor.name} />
+                      {mentor.photo ? (
+                        <img 
+                          src={mentor.photo} 
+                          alt={`Фото ментора ${mentor.name}`} 
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="mentor-placeholder">Фото отсутствует</div>
+                      )}
                     </div>
                     <div className="mentor-info">
                       <div className="mentor-name">{mentor.name}</div>
@@ -515,7 +583,9 @@ const MainScreen = ({ onLogout }) => {
                     <div className="mentor-text">
                       <b>{mentor.description}</b>
                     </div>
-                    <button className="more-btn">ПОДРОБНЕЕ</button>
+                    <button className="more-btn" aria-label={`Подробнее о менторе ${mentor.name}`}>
+                      ПОДРОБНЕЕ
+                    </button>
                   </div>
                 ))
               ) : (
@@ -535,6 +605,7 @@ const MainScreen = ({ onLogout }) => {
                     className="page-btn" 
                     disabled={page === 1} 
                     onClick={() => setPage(page - 1)}
+                    aria-label="Предыдущая страница"
                   >
                     &lt;
                   </button>
@@ -544,6 +615,8 @@ const MainScreen = ({ onLogout }) => {
                         key={i}
                         className={`page-num${page === i+1 ? " selected" : ""}`}
                         onClick={() => setPage(i + 1)}
+                        aria-label={`Страница ${i + 1}`}
+                        aria-current={page === i+1 ? "page" : undefined}
                       >
                         {i + 1}
                       </button>
@@ -553,6 +626,7 @@ const MainScreen = ({ onLogout }) => {
                     className="page-btn" 
                     disabled={page === totalPages} 
                     onClick={() => setPage(page + 1)}
+                    aria-label="Следующая страница"
                   >
                     &gt;
                   </button>
@@ -593,6 +667,7 @@ const MainScreen = ({ onLogout }) => {
             <p><strong>Имя пользователя:</strong> {userInfo.username}</p>
             <p><strong>Email:</strong> {userInfo.email}</p>
             <p><strong>ID пользователя:</strong> {userInfo.id}</p>
+            <p><strong>Дата регистрации:</strong> {userInfo.createdAt ? new Date(userInfo.createdAt).toLocaleDateString('ru-RU') : 'Не указана'}</p>
           </div>
         </div>
       )}

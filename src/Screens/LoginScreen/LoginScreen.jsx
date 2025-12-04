@@ -1,4 +1,3 @@
-// src/screens/LoginScreen/LoginScreen.jsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './LoginScreen.css';
@@ -67,7 +66,6 @@ const LoginScreen = ({ onLogin }) => {
     setError('');
 
     try {
-      // ИСПРАВЛЕНИЕ 1: Правильный формат данных для передачи в onLogin
       const credentials = {
         login: formData.login,
         password: formData.password
@@ -88,26 +86,9 @@ const LoginScreen = ({ onLogin }) => {
     }
   };
 
-  const fillTestData = () => {
-    setFormData({
-      login: 'testuser',
-      password: 'password123'
-    });
-    setError('');
-  };
-
   const goToWelcome = () => {
     navigate('/');
   };
-
-  // ИСПРАВЛЕНИЕ 2: Убрал неиспользуемую функцию clearForm
-  // const clearForm = () => {
-  //   setFormData({
-  //     login: '',
-  //     password: ''
-  //   });
-  //   setError('');
-  // };
 
   return (
     <div className="login-screen">
@@ -187,7 +168,6 @@ const LoginScreen = ({ onLogin }) => {
           </button>
           
           <div className="login-options">
-            {/* ИСПРАВЛЕНИЕ 3: Добавил div для структуры CSS */}
             <div className="options-left">
               <Link to="/register" className="register">
                 Регистрация
