@@ -70,6 +70,14 @@
   gap: 0.9375rem;
 }
 
+.char-count {
+  margin-left: 20px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  color: #69505c;
+  font-weight: 500;
+}
+
 /* Поле для ввода текста новой заметки */
 .note-textarea {
   width: 100%;

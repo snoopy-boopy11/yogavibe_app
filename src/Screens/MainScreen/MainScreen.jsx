@@ -281,12 +281,27 @@ const MainScreen = ({ user, onLogout }) => {
     if (filters.city !== 'all' && mentor.city !== filters.city) return false;
     if (filters.yogaStyle !== 'all' && mentor.yogaStyle !== filters.yogaStyle) return false;
     
-    // Обработка ценового фильтра
+    // Обработка ценового фильтра с валидацией
     const minPrice = filters.minPrice ? parseInt(filters.minPrice) : null;
     const maxPrice = filters.maxPrice ? parseInt(filters.maxPrice) : null;
     
-    if (minPrice !== null && mentor.price < minPrice) return false;
-    if (maxPrice !== null && mentor.price > maxPrice) return false;
+    // Проверяем, что числа валидны и не отрицательные
+    if (minPrice !== null) {
+      // Если minPrice не число, меньше 0 или NaN
+      if (isNaN(minPrice) || minPrice < 0) return false;
+      if (mentor.price < minPrice) return false;
+    }
+    
+    if (maxPrice !== null) {
+      // Если maxPrice не число, меньше 0 или NaN
+      if (isNaN(maxPrice) || maxPrice < 0) return false;
+      if (mentor.price > maxPrice) return false;
+    }
+    
+    // Дополнительная проверка: maxPrice должен быть >= minPrice
+    if (minPrice !== null && maxPrice !== null) {
+      if (minPrice > maxPrice) return false;
+    }
     
     return true;
   });
@@ -341,6 +356,22 @@ const MainScreen = ({ user, onLogout }) => {
     setFilters(prev => ({
       ...prev,
       [filterName]: value
+    }));
+  };
+
+  // Обработчик изменения ценовых полей с валидацией
+  const handlePriceChange = (field, value) => {
+    // Удаляем все нецифровые символы, кроме пустой строки
+    const numericValue = value === '' ? '' : value.replace(/[^0-9]/g, '');
+    
+    // Если значение не пустое, проверяем, что оно положительное
+    if (numericValue !== '' && parseInt(numericValue) < 0) {
+      return; // Не обновляем состояние для отрицательных значений
+    }
+    
+    setFilters(prev => ({
+      ...prev,
+      [field]: numericValue
     }));
   };
 
@@ -517,19 +548,31 @@ const MainScreen = ({ user, onLogout }) => {
                   type="number"
                   placeholder="От"
                   value={filters.minPrice}
-                  onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                  onChange={(e) => handlePriceChange('minPrice', e.target.value)}
                   className="price-input"
                   aria-label="Минимальная цена"
                   min="0"
+                  onKeyDown={(e) => {
+                    // Предотвращаем ввод минуса
+                    if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                      e.preventDefault();
+                    }
+                  }}
                 />
                 <input
                   type="number"
                   placeholder="До"
                   value={filters.maxPrice}
-                  onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                  onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
                   className="price-input"
                   aria-label="Максимальная цена"
                   min="0"
+                  onKeyDown={(e) => {
+                    // Предотвращаем ввод минуса
+                    if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
             </div>
