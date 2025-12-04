@@ -6,6 +6,24 @@ import logo from './flower.svg';
 import eyeShow from './eye-show.svg';
 import eyeHide from './eye-hide.svg';
 
+// Константы для моковых пользователей
+const MOCK_USERS = [
+  { 
+    id: 1, 
+    username: 'testuser', 
+    email: 'test@example.com', 
+    password: 'password123', 
+    name: 'Тестовый Пользователь' 
+  },
+  { 
+    id: 2, 
+    username: 'yogi', 
+    email: 'yogi@example.com', 
+    password: 'yoga123', 
+    name: 'Йогин Тестовый' 
+  }
+];
+
 const LoginScreen = ({ onLogin }) => {
   // Состояние для видимости пароля
   const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +38,14 @@ const LoginScreen = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Функция для поиска пользователя
+  const findUser = (usersArray, login, password) => {
+    return usersArray.find(u => 
+      (u.email === login || u.username === login) && 
+      u.password === password
+    );
+  };
 
   // Переключение видимости пароля
   const togglePasswordVisibility = () => {
@@ -42,10 +68,26 @@ const LoginScreen = ({ onLogin }) => {
       setError('Введите логин или email');
       return false;
     }
+    
+    // Если введен email, проверяем его формат
+    if (formData.login.includes('@')) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.login)) {
+        setError('Введите корректный email');
+        return false;
+      }
+    }
+    
     if (!formData.password.trim()) {
       setError('Введите пароль');
       return false;
     }
+    
+    if (formData.password.length < 6) {
+      setError('Пароль должен содержать минимум 6 символов');
+      return false;
+    }
+    
     return true;
   };
 
@@ -61,17 +103,17 @@ const LoginScreen = ({ onLogin }) => {
     setError('');
 
     try {
-      // Проверка пользователей из localStorage
+      // 1. Ищем в localStorage
       const users = JSON.parse(localStorage.getItem('yogavibe_users') || '[]');
+      let user = findUser(users, formData.login, formData.password);
       
-      // Поиск пользователя
-      const user = users.find(u => 
-        (u.email === formData.login || u.username === formData.login) && 
-        u.password === formData.password
-      );
+      // 2. Если не нашли, ищем в моковых данных
+      if (!user) {
+        user = findUser(MOCK_USERS, formData.login, formData.password);
+      }
 
       if (user) {
-        // Успешный вход с пользователем из localStorage
+        // Общая логика для успешного входа
         const userData = {
           id: user.id,
           username: user.username,
@@ -80,45 +122,13 @@ const LoginScreen = ({ onLogin }) => {
         };
         
         onLogin(userData);
+        // Сохраняем информацию о входе в localStorage
+        localStorage.setItem('yogavibe_currentUser', JSON.stringify(userData));
+        localStorage.setItem('yogavibe_isLoggedIn', 'true');
+        
         navigate('/main');
       } else {
-        // Проверка моковых пользователей
-        const mockUsers = [
-          { 
-            id: 1, 
-            username: 'testuser', 
-            email: 'test@example.com', 
-            password: 'password123', 
-            name: 'Тестовый Пользователь' 
-          },
-          { 
-            id: 2, 
-            username: 'yogi', 
-            email: 'yogi@example.com', 
-            password: 'yoga123', 
-            name: 'Йогин Тестовый' 
-          }
-        ];
-
-        const mockUser = mockUsers.find(u => 
-          (u.email === formData.login || u.username === formData.login) && 
-          u.password === formData.password
-        );
-
-        if (mockUser) {
-          // Успешный вход с моковым пользователем
-          const userData = {
-            id: mockUser.id,
-            username: mockUser.username,
-            email: mockUser.email,
-            name: mockUser.name
-          };
-          
-          onLogin(userData);
-          navigate('/main');
-        } else {
-          setError('Неверный логин или пароль');
-        }
+        setError('Неверный логин или пароль');
       }
     } catch (err) {
       setError('Ошибка при входе. Попробуйте еще раз.');
@@ -134,11 +144,21 @@ const LoginScreen = ({ onLogin }) => {
       login: 'testuser',
       password: 'password123'
     });
+    setError(''); // Сбрасываем ошибку при заполнении тестовых данных
   };
 
   // Переход на главную страницу
   const goToWelcome = () => {
     navigate('/');
+  };
+
+  // Очистка формы
+  const clearForm = () => {
+    setFormData({
+      login: '',
+      password: ''
+    });
+    setError('');
   };
 
   return (
@@ -180,6 +200,7 @@ const LoginScreen = ({ onLogin }) => {
               disabled={loading}
               required
               aria-label="Логин или email"
+              aria-invalid={!!error}
             />
           </div>
           
@@ -194,7 +215,9 @@ const LoginScreen = ({ onLogin }) => {
               onChange={handleChange}
               disabled={loading}
               required
+              minLength="6"
               aria-label="Пароль"
+              aria-invalid={!!error}
             />
             <button 
               type="button"
@@ -202,6 +225,7 @@ const LoginScreen = ({ onLogin }) => {
               onClick={togglePasswordVisibility}
               disabled={loading}
               aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+              tabIndex="0"
             >
               <img
                 src={showPassword ? eyeHide : eyeShow} 
@@ -218,24 +242,28 @@ const LoginScreen = ({ onLogin }) => {
             disabled={loading}
             aria-busy={loading}
           >
-            {loading ? 'ВХОД...' : 'ВОЙТИ'}
+            {loading ? 'ВХОД...' : 'Войти'}
           </button>
           
           {/* Дополнительные опции */}
           <div className="login-options">
-            <Link to="/register" className="register">
-              регистрация
-            </Link>
+            <div className="options-left">
+              <Link to="/register" className="register">
+                Регистрация
+              </Link>
+            </div>
             
-            {/* Кнопка для тестового входа */}
-            <button 
-              type="button"
-              className="demo-button"
-              onClick={fillTestData}
-              disabled={loading}
-            >
-              Тестовый вход
-            </button>
+            <div className="options-right">
+              {/* Кнопка для тестового входа */}
+              <button 
+                type="button"
+                className="demo-button"
+                onClick={fillTestData}
+                disabled={loading}
+              >
+                Тестовый вход
+              </button>
+            </div>
           </div>
         </form>
       </div>

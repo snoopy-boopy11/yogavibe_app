@@ -120,7 +120,7 @@ const RegisterScreen = ({ onRegister }) => {
     try {
       // Создание нового пользователя
       const newUser = {
-        id: Date.now(), // Уникальный ID на основе времени
+        id: Date.now(), // Уникальный ID
         username: formData.username.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,

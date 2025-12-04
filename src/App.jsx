@@ -11,37 +11,56 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Проверяем наличие токена/пользователя при загрузке
+  // Проверка аутентификации при загрузке
   useEffect(() => {
     const checkAuth = () => {
       const user = localStorage.getItem('yogavibe_user');
-      if (user) {
-        setIsAuthenticated(true);
-      }
+      setIsAuthenticated(!!user);
       setLoading(false);
     };
 
     checkAuth();
   }, []);
 
+  // Обработчик входа
   const handleLogin = (userData) => {
-    localStorage.setItem('yogavibe_user', JSON.stringify(userData));
+    // Сохраняем полные данные пользователя
+    const fullUserData = {
+      id: userData.id,
+      username: userData.username,
+      email: userData.email,
+      name: userData.name,
+      createdAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem('yogavibe_user', JSON.stringify(fullUserData));
     setIsAuthenticated(true);
   };
 
+  // Обработчик выхода
   const handleLogout = () => {
     localStorage.removeItem('yogavibe_user');
     setIsAuthenticated(false);
   };
 
+  // Обработчик регистрации
   const handleRegister = (userData) => {
-    // Сохраняем нового пользователя
+    // Генерируем уникальный ID для нового пользователя
+    const newUser = {
+      id: Date.now(),
+      username: userData.username,
+      email: userData.email,
+      name: userData.name || userData.username,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Сохраняем пользователя в список пользователей
     const users = JSON.parse(localStorage.getItem('yogavibe_users') || '[]');
-    users.push(userData);
+    users.push(newUser);
     localStorage.setItem('yogavibe_users', JSON.stringify(users));
     
-    // Автоматически логиним пользователя после регистрации
-    localStorage.setItem('yogavibe_user', JSON.stringify(userData));
+    // Автоматически логиним пользователя
+    localStorage.setItem('yogavibe_user', JSON.stringify(newUser));
     setIsAuthenticated(true);
   };
 
