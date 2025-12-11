@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import './MainScreen.css';
 import NotesScreen from '../NotesScreen/NotesScreen';
 import ProfileScreen from '../ProfileScreen/ProfileScreen';
+import MyBookingsScreen from '../MyBookingsScreen/MyBookingsScreen';
 
 import mentor1 from './mentors/1.jpg';
 import mentor2 from './mentors/2.jpg';
@@ -606,44 +607,52 @@ const MainScreen = ({ user, onLogout }) => {
           {/* Основной контент с менторами */}
           <main className="mentors-main">
             <div className="mentors-area">
-              {currentMentors.map((mentor) => (
-                <div className="mentor-card" key={mentor.id}>
-                  <div className="mentor-img">
-                    {mentor.photo ? (
-                      <img 
-                        src={mentor.photo} 
-                        alt={`Фото ментора ${mentor.name}`} 
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="mentor-placeholder">Фото отсутствует</div>
-                    )}
-                  </div>
-                  <div className="mentor-info">
-                    <div className="mentor-name">{mentor.name}</div>
-                    <div className="mentor-details">
-                      <span className="mentor-city">{mentor.city}</span>
-                      <span className="mentor-price">{mentor.price} ₽/сессия</span>
+              {currentMentors.length > 0 ? (
+                currentMentors.map((mentor) => (
+                  <div className="mentor-card" key={mentor.id}>
+                    <div className="mentor-img">
+                      {mentor.photo ? (
+                        <img 
+                          src={mentor.photo} 
+                          alt={`Фото ментора ${mentor.name}`} 
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="mentor-placeholder">Фото отсутствует</div>
+                      )}
                     </div>
-                    <div className="mentor-yoga-style">
-                      <span className="yoga-style-tag">{mentor.yogaStyle}</span>
+                    <div className="mentor-info">
+                      <div className="mentor-name">{mentor.name}</div>
+                      <div className="mentor-details">
+                        <span className="mentor-city">{mentor.city}</span>
+                        <span className="mentor-price">{mentor.price} ₽/сессия</span>
+                      </div>
+                      <div className="mentor-yoga-style">
+                        <span className="yoga-style-tag">{mentor.yogaStyle}</span>
+                      </div>
                     </div>
+                    <div className="mentor-text">
+                      <b>{mentor.description}</b>
+                    </div>
+                    <Link 
+                      to={`/mentor/${mentor.id}`}
+                      className="more-btn-link"
+                      aria-label={`Подробнее о менторе ${mentor.name}`}
+                    >
+                      <button className="more-btn">
+                        ПОДРОБНЕЕ
+                      </button>
+                    </Link>
                   </div>
-                  <div className="mentor-text">
-                    <b>{mentor.description}</b>
-                  </div>
-                  <Link 
-                    to={`/mentor/${mentor.id}`}
-                    className="more-btn-link"
-                    aria-label={`Подробнее о менторе ${mentor.name}`}
-                  >
-                    <button className="more-btn">
-                      ПОДРОБНЕЕ
-                    </button>
-                  </Link>
+                ))
+              ) : (
+                <div className="no-results">
+                  <p>По вашему запросу менторов не найдено</p>
+                  <button className="clear-filters-btn" onClick={clearFilters}>
+                    Сбросить фильтры
+                  </button>
                 </div>
-              ))}
-
+              )}
             </div>
             
             {totalPages > 1 && (
@@ -686,10 +695,7 @@ const MainScreen = ({ user, onLogout }) => {
       )}
       
       {activeNav === 'МОИ ЗАПИСИ' && (
-        <div className="page-content">
-          <h2>Мои записи</h2>
-          <p>Здесь будут отображаться ваши предстоящие и завершенные сессии</p>
-        </div>
+        <MyBookingsScreen />
       )}
       
       {activeNav === 'ЗАМЕТКИ' && (
