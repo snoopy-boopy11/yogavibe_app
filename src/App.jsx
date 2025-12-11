@@ -1,4 +1,3 @@
-// src/App.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import WelcomeScreen from './screens/WelcomeScreen/WelcomeScreen';
@@ -7,6 +6,7 @@ import RegisterScreen from './screens/RegisterScreen/RegisterScreen';
 import MainScreen from './screens/MainScreen/MainScreen';
 import MentorProfileScreen from './screens/MentorsProfile/MentorProfileScreen';
 import BookingScreen from './screens/BookingScreen/BookingScreen';
+import BookingConfirmationScreen from './screens/BookingConfirm/BookingConfirmationScreen';
 import AuthService from './services/AuthService';
 import './App.css';
 
@@ -124,14 +124,22 @@ function App() {
             } 
           />
           <Route 
-          path="/booking/:mentorId" 
-          element={
-            isAuthenticated ? 
-            <BookingScreen /> : 
-            <Navigate to="/login" />
-          } 
-        />
-        </Routes>     
+            path="/booking/:mentorId" 
+            element={
+              isAuthenticated ? 
+              <BookingScreen /> : 
+              <Navigate to="/login" />
+            } 
+          />
+          <Route 
+            path="/booking-confirmation" 
+            element={
+              isAuthenticated ? 
+              <BookingConfirmationScreen /> : 
+              <Navigate to="/login" />
+            } 
+          />
+        </Routes>
       </div>
     </Router>
   );
