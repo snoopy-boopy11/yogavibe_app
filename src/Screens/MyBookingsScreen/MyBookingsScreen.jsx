@@ -203,15 +203,6 @@ const MyBookingsScreen = () => {
     </div>
   );
 
-  if (loading) {
-    return (
-      <div className="bookings-loading">
-        <div className="loading-spinner"></div>
-        <p>Загрузка ваших записей...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="bookings-page">
       <div className="bookings-container">
@@ -267,14 +258,6 @@ const MyBookingsScreen = () => {
                   : 'У вас нет отмененных записей'
                 }
               </p>
-              {activeTab === 'upcoming' && (
-                <button 
-                  onClick={handleBookNewSession}
-                  className="find-mentor-btn"
-                >
-                  Найти ментора
-                </button>
-              )}
             </div>
           ) : (
             filteredBookings.map(booking => (
