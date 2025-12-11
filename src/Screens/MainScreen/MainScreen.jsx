@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MainScreen.css';
 import NotesScreen from '../NotesScreen/NotesScreen';
+import ProfileScreen from '../ProfileScreen/ProfileScreen';
 
 import mentor1 from './mentors/1.jpg';
 import mentor2 from './mentors/2.jpg';
@@ -393,6 +394,12 @@ const MainScreen = ({ user, onLogout }) => {
     }
   };
 
+  const handleUpdateProfile = async (userId, profileData) => {
+    console.log('Обновление профиля:', { userId, profileData });
+    // Здесь будет логика для обновления профиля на бэкенде
+    return { success: true };
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // ========== РЕНДЕРИНГ ==========
@@ -703,16 +710,10 @@ const MainScreen = ({ user, onLogout }) => {
       )}
       
       {activeNav === 'МОЯ АНКЕТА' && (
-        <div className="page-content">
-          <h2>Моя анкета</h2>
-          <p>Здесь вы можете редактировать свою анкету и настройки профиля</p>
-          <div className="profile-info">
-            <p><strong>Имя пользователя:</strong> {userInfo.username}</p>
-            <p><strong>Email:</strong> {userInfo.email}</p>
-            <p><strong>ID пользователя:</strong> {userInfo.id}</p>
-            <p><strong>Дата регистрации:</strong> {userInfo.createdAt ? new Date(userInfo.createdAt).toLocaleDateString('ru-RU') : 'Не указана'}</p>
-          </div>
-        </div>
+        <ProfileScreen 
+          user={userInfo} 
+          onUpdateProfile={handleUpdateProfile}
+        />
       )}
     </div>
   );
