@@ -259,6 +259,10 @@
   gap: 1rem;
 }
 
+.field-group:last-child {
+  margin-bottom: 0;
+}
+
 .field-group.full-width {
   flex-direction: column;
   gap: 0.5rem;
@@ -337,14 +341,24 @@
   line-height: 1.4;
 }
 
-/* Экран загрузки */
-.mentor-profile-loading {
+/* Экран загрузки (дублирование с другими файлами) */
+.mentor-profile-loading,
+.mentor-profile-not-found {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   background: rgba(228, 216, 210, 0.9);
+  text-align: center;
+}
+
+.mentor-profile-not-found h2 {
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 900;
+  color: #69505c;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .loading-spinner {
@@ -359,23 +373,6 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-.mentor-profile-not-found {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: rgba(228, 216, 210, 0.9);
-}
-
-.mentor-profile-not-found h2 {
-  font-family: 'Source Serif Pro', serif;
-  font-weight: 900;
-  color: #69505c;
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
 }
 
 /* Кастомный скроллбар */

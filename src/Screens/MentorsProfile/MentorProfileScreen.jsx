@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './MentorProfileScreen.css';
 
-// Моковые данные менторов (расширенные для профиля)
-const mockMentors = [
+// Выносим моковые данные в константы (можно вынести в отдельный файл)
+const MOCK_MENTORS = [
   { 
     id: 1, 
     name: "Анна Иванова", 
@@ -94,6 +94,25 @@ const mockMentors = [
   }
 ];
 
+// Компонент поля информации
+const InfoField = ({ label, value }) => (
+  <div className="field-group">
+    <label>{label}:</label>
+    <div className="field-value">{value || 'Не указано'}</div>
+  </div>
+);
+
+// Компонент отзыва
+const ReviewItem = ({ author, date, text }) => (
+  <div className="review-item">
+    <div className="review-header">
+      <span className="review-author">{author}</span>
+      <span className="review-date">{date}</span>
+    </div>
+    <div className="review-text">{text}</div>
+  </div>
+);
+
 const MentorProfileScreen = () => {
   const { mentorId } = useParams();
   const navigate = useNavigate();
@@ -108,7 +127,7 @@ const MentorProfileScreen = () => {
     setLoading(true);
     
     setTimeout(() => {
-      const foundMentor = mockMentors.find(m => m.id === parseInt(mentorId));
+      const foundMentor = MOCK_MENTORS.find(m => m.id === parseInt(mentorId));
       
       if (foundMentor) {
         // Загружаем дополнительные данные из localStorage если они есть
@@ -224,60 +243,27 @@ const MentorProfileScreen = () => {
                 {/* Информация о менторе */}
                 <div className="mentor-section">
                   <h3>О МЕНТОРЕ</h3>
-                  <div className="field-group">
-                    <label>Стиль йоги:</label>
-                    <div className="field-value">{mentor.yogaStyle}</div>
-                  </div>
-                  <div className="field-group">
-                    <label>Опыт преподавания:</label>
-                    <div className="field-value">{mentor.experience}</div>
-                  </div>
-                  <div className="field-group">
-                    <label>Специализация:</label>
-                    <div className="field-value">{mentor.specialization}</div>
-                  </div>
-                  <div className="field-group">
-                    <label>Доступность:</label>
-                    <div className="field-value">{mentor.availability}</div>
-                  </div>
+                  <InfoField label="Стиль йоги" value={mentor.yogaStyle} />
+                  <InfoField label="Опыт преподавания" value={mentor.experience} />
+                  <InfoField label="Специализация" value={mentor.specialization} />
+                  <InfoField label="Доступность" value={mentor.availability} />
                 </div>
 
                 {/* Образование и сертификация */}
                 <div className="mentor-section">
                   <h3>ОБРАЗОВАНИЕ И СЕРТИФИКАЦИЯ</h3>
-                  <div className="field-group">
-                    <label>Образование:</label>
-                    <div className="field-value">{mentor.education}</div>
-                  </div>
-                  <div className="field-group">
-                    <label>Сертификация:</label>
-                    <div className="field-value">{mentor.certification}</div>
-                  </div>
-                  <div className="field-group">
-                    <label>Номер сертификата:</label>
-                    <div className="field-value">{mentor.certificateNumber || '2C8D9E4A1B0F3A6'}</div>
-                  </div>
-                  <div className="field-group">
-                    <label>Дата регистрации:</label>
-                    <div className="field-value">{mentor.registrationDate || '24.07.2024'}</div>
-                  </div>
+                  <InfoField label="Образование" value={mentor.education} />
+                  <InfoField label="Сертификация" value={mentor.certification} />
+                  <InfoField label="Номер сертификата" value={mentor.certificateNumber} />
+                  <InfoField label="Дата регистрации" value={mentor.registrationDate} />
                 </div>
 
                 {/* Контакты */}
                 <div className="mentor-section">
                   <h3>КОНТАКТНАЯ ИНФОРМАЦИЯ</h3>
-                  <div className="field-group">
-                    <label>Город:</label>
-                    <div className="field-value">{mentor.city}</div>
-                  </div>
-                  <div className="field-group">
-                    <label>Языки:</label>
-                    <div className="field-value">{mentor.languages?.join(', ') || 'Русский'}</div>
-                  </div>
-                  <div className="field-group">
-                    <label>Способ связи:</label>
-                    <div className="field-value">Через платформу YogaVibe</div>
-                  </div>
+                  <InfoField label="Город" value={mentor.city} />
+                  <InfoField label="Языки" value={mentor.languages?.join(', ')} />
+                  <InfoField label="Способ связи" value="Через платформу YogaVibe" />
                 </div>
 
                 {/* Философия и подход */}
@@ -285,7 +271,7 @@ const MentorProfileScreen = () => {
                   <h3>ФИЛОСОФИЯ И ПОДХОД</h3>
                   <div className="field-group full-width">
                     <div className="field-value philosophy-text">
-                      {mentor.philosophy || "Мой подход основан на индивидуальной работе с каждым учеником. Я верю, что йога - это не просто физическая практика, а путь к гармонии тела и разума. На своих занятиях я уделяю внимание не только правильному выполнению асан, но и дыхательным практикам, медитации и философии йоги."}
+                      {mentor.philosophy}
                     </div>
                   </div>
                 </div>
@@ -295,7 +281,7 @@ const MentorProfileScreen = () => {
                   <h3>ДОСТИЖЕНИЯ</h3>
                   <div className="field-group full-width">
                     <div className="field-value achievements-text">
-                      {mentor.achievements || "• Провел более 1000 индивидуальных сессий\n• Обучение у мастеров в Индии и Таиланде\n• Участник международных конференций по йоге\n• Автор статей о йоге и здоровом образе жизни"}
+                      {mentor.achievements}
                     </div>
                   </div>
                 </div>
@@ -304,33 +290,21 @@ const MentorProfileScreen = () => {
                 <div className="mentor-section">
                   <h3>ОТЗЫВЫ УЧЕНИКОВ</h3>
                   <div className="reviews-list">
-                    <div className="review-item">
-                      <div className="review-header">
-                        <span className="review-author">Мария С.</span>
-                        <span className="review-date">15.01.2024</span>
-                      </div>
-                      <div className="review-text">
-                        Отличный специалист! Очень внимательный и профессиональный подход. После занятий чувствую себя значительно лучше.
-                      </div>
-                    </div>
-                    <div className="review-item">
-                      <div className="review-header">
-                        <span className="review-author">Алексей К.</span>
-                        <span className="review-date">10.01.2024</span>
-                      </div>
-                      <div className="review-text">
-                        {mentor.name} - настоящий профессионал. Помог мне справиться с болями в спине и улучшить осанку. Рекомендую!
-                      </div>
-                    </div>
-                    <div className="review-item">
-                      <div className="review-header">
-                        <span className="review-author">Елена В.</span>
-                        <span className="review-date">05.01.2024</span>
-                      </div>
-                      <div className="review-text">
-                        Занимаюсь уже 3 месяца, прогресс налицо. Стала более гибкой и спокойной. Спасибо за индивидуальный подход!
-                      </div>
-                    </div>
+                    <ReviewItem 
+                      author="Мария С."
+                      date="15.01.2024"
+                      text="Отличный специалист! Очень внимательный и профессиональный подход. После занятий чувствую себя значительно лучше."
+                    />
+                    <ReviewItem 
+                      author="Алексей К."
+                      date="10.01.2024"
+                      text={`${mentor.name} - настоящий профессионал. Помог мне справиться с болями в спине и улучшить осанку. Рекомендую!`}
+                    />
+                    <ReviewItem 
+                      author="Елена В."
+                      date="05.01.2024"
+                      text="Занимаюсь уже 3 месяца, прогресс налицо. Стала более гибкой и спокойной. Спасибо за индивидуальный подход!"
+                    />
                   </div>
                 </div>
               </div>
