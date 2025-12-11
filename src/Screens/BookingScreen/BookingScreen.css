@@ -176,6 +176,7 @@
   min-height: 100px;
 }
 
+/* Специфичные стили для select элементов */
 #time, #duration, #sessionType {
     width: 100%;
     height: 48px;
@@ -189,37 +190,7 @@
   transition: border-color 0.3s ease;
 }
 
-/* Успешное оформление */
-.booking-success {
-  background: #4CAF50;
-  color: white;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  animation: fadeIn 0.3s ease;
-}
-
-.success-icon {
-  font-size: 2rem;
-  font-weight: bold;
-}
-
-.success-message h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.2rem;
-}
-
-.success-message p {
-  margin: 0;
-  opacity: 0.9;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* Удалены неиспользуемые стили для .booking-success (редирект после успеха) */
 
 /* Итоговая стоимость */
 .price-summary {
@@ -306,7 +277,7 @@
   cursor: not-allowed;
 }
 
-/* Загрузка */
+/* Загрузка (дублирование с другими файлами) */
 .booking-loading,
 .booking-not-found {
   display: flex;
@@ -315,6 +286,15 @@
   align-items: center;
   min-height: 100vh;
   background: rgba(228, 216, 210, 0.9);
+  text-align: center;
+}
+
+.booking-not-found h2 {
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 900;
+  color: #69505c;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .loading-spinner {
@@ -365,5 +345,9 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+  }
+  
+  .booking-header h1 {
+    font-size: 1.5rem;
   }
 }

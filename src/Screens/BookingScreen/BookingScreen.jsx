@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import './BookingScreen.css';
 
+// Утилита для генерации временных слотов
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let hour = 9; hour <= 20; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      slots.push(time);
+    }
+  }
+  return slots;
+};
+
 const BookingScreen = () => {
   const { mentorId } = useParams();
   const navigate = useNavigate();
@@ -16,7 +28,7 @@ const BookingScreen = () => {
     sessionType: 'individual' // индивидуальная или групповая
   });
   const [isBooking, setIsBooking] = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
+  // Удалено: const [bookingSuccess, setBookingSuccess] = useState(false);
 
   // Получаем данные ментора из location.state или загружаем
   useEffect(() => {
@@ -30,7 +42,7 @@ const BookingScreen = () => {
 
   const loadMentorData = () => {
     setLoading(true);
-    // Моковые данные
+    // Моковые данные (можно вынести в отдельный файл)
     setTimeout(() => {
       const mockMentors = [
         { 
@@ -96,12 +108,14 @@ const BookingScreen = () => {
       localStorage.setItem('yogavibe_bookings', JSON.stringify(allBookings));
       
       setIsBooking(false);
-      setBookingSuccess(true);
       
-      // Через 3 секунды переходим на страницу записей
-      setTimeout(() => {
-        navigate('/main', { state: { activeNav: 'МОИ ЗАПИСИ' } });
-      }, 3000);
+      // Переходим на экран подтверждения
+      navigate('/booking-confirmation', { 
+        state: { 
+          bookingData: newBooking,
+          mentor: mentor 
+        } 
+      });
     }, 1500);
   };
 
@@ -115,17 +129,6 @@ const BookingScreen = () => {
 
   const handleBackClick = () => {
     navigate(`/mentor/${mentorId}`);
-  };
-
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 9; hour <= 20; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(time);
-      }
-    }
-    return slots;
   };
 
   if (loading) {
@@ -184,15 +187,7 @@ const BookingScreen = () => {
 
         {/* Форма записи */}
         <form className="booking-form" onSubmit={handleSubmit}>
-          {bookingSuccess && (
-            <div className="booking-success">
-              <div className="success-icon">✓</div>
-              <div className="success-message">
-                <h3>Запись успешно оформлена!</h3>
-                <p>Перенаправляем на страницу ваших записей...</p>
-              </div>
-            </div>
-          )}
+          {/* Удален блок booking-success, так как после успеха идет редирект */}
 
           <div className="form-section">
             <h3>Выберите дату и время</h3>
