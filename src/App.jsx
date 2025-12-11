@@ -5,6 +5,8 @@ import WelcomeScreen from './screens/WelcomeScreen/WelcomeScreen';
 import LoginScreen from './screens/LoginScreen/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen/RegisterScreen';
 import MainScreen from './screens/MainScreen/MainScreen';
+import MentorProfileScreen from './screens/MentorsProfile/MentorProfileScreen';
+import BookingScreen from './screens/BookingScreen/BookingScreen';
 import AuthService from './services/AuthService';
 import './App.css';
 
@@ -113,7 +115,23 @@ function App() {
               <Navigate to="/login" />
             } 
           />
-        </Routes>
+          <Route 
+            path="/mentor/:mentorId" 
+            element={
+              isAuthenticated ? 
+              <MentorProfileScreen /> : 
+              <Navigate to="/login" />
+            } 
+          />
+          <Route 
+          path="/booking/:mentorId" 
+          element={
+            isAuthenticated ? 
+            <BookingScreen /> : 
+            <Navigate to="/login" />
+          } 
+        />
+        </Routes>     
       </div>
     </Router>
   );
