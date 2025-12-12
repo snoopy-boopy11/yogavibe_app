@@ -39,7 +39,8 @@ function App() {
     try {
       const result = await AuthService.login(credentials);
       if (result.success) {
-        setUser(result.user);
+        const currentUser = AuthService.getCurrentUser();
+        setUser(currentUser);
         setIsAuthenticated(true);
         return { success: true };
       }
@@ -55,7 +56,8 @@ function App() {
     try {
       const result = await AuthService.register(userData);
       if (result.success) {
-        setUser(result.user);
+        const currentUser = AuthService.getCurrentUser();
+        setUser(currentUser);
         setIsAuthenticated(true);
         return { success: true };
       }
@@ -139,6 +141,8 @@ function App() {
               <Navigate to="/login" />
             } 
           />
+          {/* Добавляем fallback route для несуществующих страниц */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
     </Router>

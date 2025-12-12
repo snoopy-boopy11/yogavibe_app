@@ -1,6 +1,5 @@
-// src/screens/WelcomeScreen/WelcomeScreen.jsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // Исправлен импорт
+import { useNavigate } from 'react-router-dom';
 import './WelcomeScreen.css';
 import eyeIcon from './eye.svg';
 import talkIcon from './talk.svg';

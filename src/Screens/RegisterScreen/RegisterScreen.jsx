@@ -1,4 +1,3 @@
-// src/screens/RegisterScreen/RegisterScreen.jsx - ОБНОВЛЕННАЯ ВЕРСИЯ
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './RegisterScreen.css';
@@ -13,7 +12,8 @@ const RegisterScreen = ({ onRegister }) => {
     username: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    name: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -34,6 +34,14 @@ const RegisterScreen = ({ onRegister }) => {
       [name]: value
     }));
     
+    // Автозаполнение поля name из username
+    if (name === 'username' && !formData.name) {
+      setFormData(prev => ({
+        ...prev,
+        name: value
+      }));
+    }
+    
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -50,24 +58,36 @@ const RegisterScreen = ({ onRegister }) => {
       newErrors.username = 'Введите имя пользователя';
     } else if (formData.username.length < 3) {
       newErrors.username = 'Имя должно быть не менее 3 символов';
+    } else if (formData.username.length > 50) {
+      newErrors.username = 'Имя должно быть не более 50 символов';
     }
     
     if (!formData.email.trim()) {
       newErrors.email = 'Введите email';
     } else if (!emailRegex.test(formData.email)) {
       newErrors.email = 'Введите корректный email';
+    } else if (formData.email.length > 100) {
+      newErrors.email = 'Email должен быть не более 100 символов';
     }
     
     if (!formData.password.trim()) {
       newErrors.password = 'Введите пароль';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Пароль должен быть не менее 6 символов';
+    } else if (formData.password.length > 100) {
+      newErrors.password = 'Пароль должен быть не более 100 символов';
     }
     
     if (!formData.confirmPassword.trim()) {
       newErrors.confirmPassword = 'Подтвердите пароль';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Пароли не совпадают';
+    }
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Введите ваше имя';
+    } else if (formData.name.length < 2) {
+      newErrors.name = 'Имя должно быть не менее 2 символов';
     }
     
     setErrors(newErrors);
@@ -89,18 +109,28 @@ const RegisterScreen = ({ onRegister }) => {
         username: formData.username.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        name: formData.username.trim()
+        name: formData.name.trim()
       };
+      
+      console.log('Registering user:', { ...userData, password: '***' });
       
       const result = await onRegister(userData);
       
       if (result.success) {
+        console.log('Registration successful, navigating to /main');
         navigate('/main');
       } else {
-        if (result.message && result.message.includes('email')) {
+        console.log('Registration failed:', result.message);
+        
+        // Обработка ошибок от API
+        if (result.message && result.message.toLowerCase().includes('email')) {
           setErrors({ email: result.message });
-        } else if (result.message && result.message.includes('имя')) {
+        } else if (result.message && result.message.toLowerCase().includes('username')) {
           setErrors({ username: result.message });
+        } else if (result.message && result.message.toLowerCase().includes('имя')) {
+          setErrors({ username: result.message });
+        } else if (result.message && result.message.toLowerCase().includes('пользователь')) {
+          setErrors({ general: result.message });
         } else {
           setErrors({ general: result.message || 'Ошибка регистрации' });
         }
@@ -144,13 +174,15 @@ const RegisterScreen = ({ onRegister }) => {
             <input 
               type="text" 
               name="username"
-              placeholder="имя пользователя"
+              placeholder="логин (для входа)"
               className={`register-input ${errors.username ? 'input-error' : ''}`}
               value={formData.username}
               onChange={handleChange}
               disabled={loading}
               required
-              aria-label="Имя пользователя"
+              minLength="3"
+              maxLength="50"
+              aria-label="Имя пользователя (логин)"
               aria-invalid={!!errors.username}
             />
             {errors.username && (
@@ -170,12 +202,35 @@ const RegisterScreen = ({ onRegister }) => {
               onChange={handleChange}
               disabled={loading}
               required
+              maxLength="100"
               aria-label="Email"
               aria-invalid={!!errors.email}
             />
             {errors.email && (
               <span className="field-error" role="alert">
                 {errors.email}
+              </span>
+            )}
+          </div>
+          
+          <div className="input-group">
+            <input 
+              type="text" 
+              name="name"
+              placeholder="ваше имя"
+              className={`register-input ${errors.name ? 'input-error' : ''}`}
+              value={formData.name}
+              onChange={handleChange}
+              disabled={loading}
+              required
+              minLength="2"
+              maxLength="100"
+              aria-label="Ваше имя"
+              aria-invalid={!!errors.name}
+            />
+            {errors.name && (
+              <span className="field-error" role="alert">
+                {errors.name}
               </span>
             )}
           </div>
@@ -190,6 +245,8 @@ const RegisterScreen = ({ onRegister }) => {
               onChange={handleChange}
               disabled={loading}
               required
+              minLength="6"
+              maxLength="100"
               aria-label="Пароль"
               aria-invalid={!!errors.password}
             />
@@ -223,6 +280,8 @@ const RegisterScreen = ({ onRegister }) => {
               onChange={handleChange}
               disabled={loading}
               required
+              minLength="6"
+              maxLength="100"
               aria-label="Подтверждение пароля"
               aria-invalid={!!errors.confirmPassword}
             />
