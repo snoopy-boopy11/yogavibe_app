@@ -1,3 +1,4 @@
+import math
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, select, delete
 from datetime import datetime, timedelta
@@ -203,10 +204,8 @@ class BookingCRUD:
             raise ValueError("Ментор временно недоступен")
         
         # Расчет цены
-        price = mentor.price * (booking_data.duration_minutes // 60)
-        # Если длительность не кратна 60 минутам, добавляем стоимость часа
-        if booking_data.duration_minutes % 60 != 0:
-            price += mentor.price
+        hours = math.ceil(booking_data.duration_minutes / 60)
+        price = mentor.price * hours
         
         booking = models.Booking(
             user_id=user_id,
