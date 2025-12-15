@@ -34,37 +34,83 @@ function App() {
     checkAuth();
   }, []);
 
-  // Обработчик входа
+  // Обработчик входа - УПРОЩЕННАЯ ВЕРСИЯ
   const handleLogin = async (credentials) => {
     try {
+      console.log('App: Starting login with:', { ...credentials, password: '***' });
+      
+      // Вызываем AuthService.login напрямую
       const result = await AuthService.login(credentials);
+      console.log('App: Login result:', result);
+      
       if (result.success) {
+        // Получаем обновленные данные пользователя
         const currentUser = AuthService.getCurrentUser();
-        setUser(currentUser);
-        setIsAuthenticated(true);
-        return { success: true };
+        console.log('App: Current user after login:', currentUser);
+        
+        if (currentUser) {
+          setUser(currentUser);
+          setIsAuthenticated(true);
+          return { success: true, message: 'Вход выполнен успешно' };
+        } else {
+          return { 
+            success: false, 
+            message: 'Пользователь не найден после входа' 
+          };
+        }
+      } else {
+        console.log('App: Login failed:', result.message);
+        return { 
+          success: false, 
+          message: result.message || 'Ошибка при входе' 
+        };
       }
-      return { success: false, message: result.message };
     } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, message: 'Ошибка при входе' };
+      console.error('App: Login error:', error);
+      return { 
+        success: false, 
+        message: 'Сервер недоступен. Проверьте подключение к интернету.' 
+      };
     }
   };
 
-  // Обработчик регистрации
+  // Обработчик регистрации - УПРОЩЕННАЯ ВЕРСИЯ
   const handleRegister = async (userData) => {
     try {
+      console.log('App: Starting registration with:', { ...userData, password: '***' });
+      
+      // Вызываем AuthService.register напрямую
       const result = await AuthService.register(userData);
+      console.log('App: Registration result:', result);
+      
       if (result.success) {
+        // Получаем обновленные данные пользователя
         const currentUser = AuthService.getCurrentUser();
-        setUser(currentUser);
-        setIsAuthenticated(true);
-        return { success: true };
+        console.log('App: Current user after registration:', currentUser);
+        
+        if (currentUser) {
+          setUser(currentUser);
+          setIsAuthenticated(true);
+          return { success: true, message: 'Регистрация успешна' };
+        } else {
+          return { 
+            success: false, 
+            message: 'Пользователь не создан' 
+          };
+        }
+      } else {
+        console.log('App: Registration failed:', result.message);
+        return { 
+          success: false, 
+          message: result.message || 'Ошибка при регистрации' 
+        };
       }
-      return { success: false, message: result.message };
     } catch (error) {
-      console.error('Registration error:', error);
-      return { success: false, message: 'Ошибка при регистрации' };
+      console.error('App: Registration error:', error);
+      return { 
+        success: false, 
+        message: 'Сервер недоступен. Проверьте подключение к интернету.' 
+      };
     }
   };
 
