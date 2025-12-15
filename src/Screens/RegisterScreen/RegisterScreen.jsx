@@ -213,28 +213,6 @@ const RegisterScreen = ({ onRegister }) => {
             )}
           </div>
           
-          <div className="input-group">
-            <input 
-              type="text" 
-              name="name"
-              placeholder="ваше имя"
-              className={`register-input ${errors.name ? 'input-error' : ''}`}
-              value={formData.name}
-              onChange={handleChange}
-              disabled={loading}
-              required
-              minLength="2"
-              maxLength="100"
-              aria-label="Ваше имя"
-              aria-invalid={!!errors.name}
-            />
-            {errors.name && (
-              <span className="field-error" role="alert">
-                {errors.name}
-              </span>
-            )}
-          </div>
-          
           <div className="input-group password-group">
             <input 
               type={showPassword ? "text" : "password"}
