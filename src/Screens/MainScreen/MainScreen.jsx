@@ -4,6 +4,10 @@ import './MainScreen.css';
 import NotesScreen from '../NotesScreen/NotesScreen';
 import ProfileScreen from '../ProfileScreen/ProfileScreen';
 import MyBookingsScreen from '../MyBookingsScreen/MyBookingsScreen';
+import NotesService from '../../services/NotesService';
+import AuthService from '../../services/AuthService';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import mentor1 from './mentors/1.jpg';
 import mentor2 from './mentors/2.jpg';
@@ -76,6 +80,7 @@ const MainScreen = ({ user, onLogout }) => {
   
   // Состояние для списка заметок пользователя
   const [notes, setNotes] = useState([]);
+  const [notesLoading, setNotesLoading] = useState(false);
   
   // Состояние для редактирования заметок
   const [editingNoteId, setEditingNoteId] = useState(null);
@@ -106,153 +111,117 @@ const MainScreen = ({ user, onLogout }) => {
   useEffect(() => {
     if (user) {
       setUserInfo(user);
-      loadUserNotes(user.id);
     } else {
       // Если user не передан, проверяем localStorage
-      const storedUser = localStorage.getItem('yogavibe_user');
+      const storedUser = AuthService.getCurrentUser();
       if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setUserInfo(userData);
-        loadUserNotes(userData.id);
+        setUserInfo(storedUser);
       } else {
         navigate('/login');
       }
     }
   }, [user, navigate]);
 
-  // Загрузка заметок пользователя по его ID
-  const loadUserNotes = (userId) => {
-    try {
-      // Получаем все заметки из localStorage
-      const allNotes = JSON.parse(localStorage.getItem('yogavibe_notes') || '{}');
-      
-      // Получаем заметки конкретного пользователя
-      const userNotes = allNotes[userId] || [];
-      
-      // Преобразуем даты из строк обратно в объекты Date
-      const formattedNotes = userNotes.map(note => {
-        try {
-          return {
-            ...note,
-            createdAt: note.createdAt ? new Date(note.createdAt).toLocaleString('ru-RU') : 'Нет даты',
-            updatedAt: note.updatedAt ? new Date(note.updatedAt).toLocaleString('ru-RU') : 'Нет даты'
-          };
-        } catch (dateError) {
-          console.error('Ошибка преобразования даты:', dateError);
-          return {
-            ...note,
-            createdAt: 'Нет даты',
-            updatedAt: 'Нет даты'
-          };
-        }
-      });
-      
-      setNotes(formattedNotes);
-    } catch (error) {
-      console.error('Ошибка загрузки заметок:', error);
-      setNotes([]);
+  // Загрузка заметок при переключении на вкладку заметок
+  useEffect(() => {
+    if (activeNav === 'ЗАМЕТКИ' && userInfo) {
+      loadNotes();
     }
-  };
+  }, [activeNav, userInfo]);
 
-  // Функция сохранения заметки в localStorage
-  const saveNoteToStorage = (note) => {
+  // Загрузка заметок с сервера
+  const loadNotes = async () => {
+    if (!userInfo) return;
+    
+    setNotesLoading(true);
     try {
-      const allNotes = JSON.parse(localStorage.getItem('yogavibe_notes') || '{}');
-      const userNotes = allNotes[note.userId] || [];
-      
-      // Ищем существующую заметку
-      const existingIndex = userNotes.findIndex(n => n.id === note.id);
-      
-      if (existingIndex >= 0) {
-        // Обновляем существующую
-        userNotes[existingIndex] = {
-          ...note,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+      const result = await NotesService.getNotes();
+      if (result.success) {
+        setNotes(result.data || []);
       } else {
-        // Добавляем новую
-        userNotes.unshift({
-          ...note,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
+        toast.error(result.message || 'Ошибка загрузки заметок');
+        setNotes([]);
       }
-      
-      allNotes[note.userId] = userNotes;
-      localStorage.setItem('yogavibe_notes', JSON.stringify(allNotes));
     } catch (error) {
-      console.error('Ошибка сохранения заметки:', error);
-    }
-  };
-
-  // Функция удаления заметки из localStorage
-  const deleteNoteFromStorage = (userId, noteId) => {
-    try {
-      const allNotes = JSON.parse(localStorage.getItem('yogavibe_notes') || '{}');
-      const userNotes = allNotes[userId] || [];
-      const updatedNotes = userNotes.filter(note => note.id !== noteId);
-      allNotes[userId] = updatedNotes;
-      localStorage.setItem('yogavibe_notes', JSON.stringify(allNotes));
-      return true;
-    } catch (error) {
-      console.error('Ошибка удаления заметки:', error);
-      return false;
+      console.error('Error loading notes:', error);
+      toast.error('Ошибка загрузки заметок');
+      setNotes([]);
+    } finally {
+      setNotesLoading(false);
     }
   };
 
   // ========== ОПЕРАЦИИ С ЗАМЕТКАМИ ==========
   
   // Добавление новой заметки
-  const addNote = (text) => {
-    if (!text.trim() || !userInfo) return;
+  const addNote = async (text) => {
+    if (!text.trim()) {
+      toast.error('Заметка не может быть пустой');
+      return;
+    }
     
-    const newNote = {
-      id: Date.now(),
-      userId: userInfo.id,
-      text: text.trim(),
-      createdAt: new Date().toLocaleString('ru-RU'),
-      updatedAt: new Date().toLocaleString('ru-RU')
-    };
-    
-    setNotes(prevNotes => [newNote, ...prevNotes]);
-    saveNoteToStorage(newNote);
+    try {
+      const result = await NotesService.createNote(text);
+      if (result.success) {
+        setNotes(prevNotes => [result.data, ...prevNotes]);
+        toast.success('Заметка добавлена');
+      } else {
+        toast.error(result.message || 'Ошибка при добавлении заметки');
+      }
+    } catch (error) {
+      console.error('Error creating note:', error);
+      toast.error('Ошибка при добавлении заметки');
+    }
   };
 
   // Обновление существующей заметки
-  const updateNote = (id, text) => {
-    if (!text.trim() || !userInfo) return;
+  const updateNote = async (id, text) => {
+    if (!text.trim()) {
+      toast.error('Заметка не может быть пустой');
+      return;
+    }
     
-    const updatedNote = {
-      id,
-      userId: userInfo.id,
-      text: text.trim(),
-      createdAt: new Date().toLocaleString('ru-RU'),
-      updatedAt: new Date().toLocaleString('ru-RU')
-    };
-    
-    setNotes(prevNotes => 
-      prevNotes.map(note => 
-        note.id === id ? updatedNote : note
-      )
-    );
-    
-    saveNoteToStorage(updatedNote);
+    try {
+      const result = await NotesService.updateNote(id, text);
+      if (result.success) {
+        setNotes(prevNotes => 
+          prevNotes.map(note => 
+            note.id === id ? result.data : note
+          )
+        );
+        toast.success('Заметка обновлена');
+      } else {
+        toast.error(result.message || 'Ошибка при обновлении заметки');
+      }
+    } catch (error) {
+      console.error('Error updating note:', error);
+      toast.error('Ошибка при обновлении заметки');
+    }
   };
 
   // Удаление заметки
-  const deleteNote = (id) => {
-    setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
-    
-    // Удаляем из localStorage
-    if (userInfo) {
-      deleteNoteFromStorage(userInfo.id, id);
+  const deleteNote = async (id) => {
+    if (!window.confirm('Вы уверены, что хотите удалить эту заметку?')) {
+      return;
     }
     
-    // Если удаляем редактируемую заметку, сбрасываем режим редактирования
-    if (editingNoteId === id) {
-      setEditingNoteId(null);
-      setEditingText('');
+    try {
+      const result = await NotesService.deleteNote(id);
+      if (result.success) {
+        setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
+        toast.success('Заметка удалена');
+        
+        // Если удаляем редактируемую заметку, сбрасываем режим редактирования
+        if (editingNoteId === id) {
+          setEditingNoteId(null);
+          setEditingText('');
+        }
+      } else {
+        toast.error(result.message || 'Ошибка при удалении заметки');
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast.error('Ошибка при удалении заметки');
     }
   };
 
@@ -263,10 +232,8 @@ const MainScreen = ({ user, onLogout }) => {
   };
 
   // Сохранение отредактированной заметки
-  const saveEditing = (id) => {
-    if (!editingText.trim()) return;
-    
-    updateNote(id, editingText);
+  const saveEditing = async (id) => {
+    await updateNote(id, editingText);
     setEditingNoteId(null);
     setEditingText('');
   };
@@ -275,6 +242,17 @@ const MainScreen = ({ user, onLogout }) => {
   const cancelEditing = () => {
     setEditingNoteId(null);
     setEditingText('');
+  };
+
+  // Обработка клавиш при редактировании
+  const handleEditKeyDown = (e, noteId) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      saveEditing(noteId);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEditing();
+    }
   };
 
   // ========== ФИЛЬТРАЦИЯ МЕНТОРОВ ==========
@@ -710,6 +688,8 @@ const MainScreen = ({ user, onLogout }) => {
           onSaveEditing={saveEditing}
           onCancelEditing={cancelEditing}
           onSetEditingText={setEditingText}
+          handleEditKeyDown={handleEditKeyDown}
+          loading={notesLoading}
         />
       )}
       
@@ -719,6 +699,19 @@ const MainScreen = ({ user, onLogout }) => {
           onUpdateProfile={handleUpdateProfile}
         />
       )}
+
+      <ToastContainer 
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </div>
   );
 };

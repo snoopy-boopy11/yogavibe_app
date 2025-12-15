@@ -12,8 +12,7 @@ const RegisterScreen = ({ onRegister }) => {
     username: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    name: ''
+    confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -34,14 +33,6 @@ const RegisterScreen = ({ onRegister }) => {
       [name]: value
     }));
     
-    // Автозаполнение поля name из username
-    if (name === 'username' && !formData.name) {
-      setFormData(prev => ({
-        ...prev,
-        name: value
-      }));
-    }
-    
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -54,14 +45,18 @@ const RegisterScreen = ({ onRegister }) => {
     const newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    // Проверка username
     if (!formData.username.trim()) {
       newErrors.username = 'Введите имя пользователя';
     } else if (formData.username.length < 3) {
       newErrors.username = 'Имя должно быть не менее 3 символов';
     } else if (formData.username.length > 50) {
       newErrors.username = 'Имя должно быть не более 50 символов';
+    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      newErrors.username = 'Имя может содержать только буквы, цифры и подчеркивания';
     }
     
+    // Проверка email
     if (!formData.email.trim()) {
       newErrors.email = 'Введите email';
     } else if (!emailRegex.test(formData.email)) {
@@ -70,6 +65,7 @@ const RegisterScreen = ({ onRegister }) => {
       newErrors.email = 'Email должен быть не более 100 символов';
     }
     
+    // Проверка пароля
     if (!formData.password.trim()) {
       newErrors.password = 'Введите пароль';
     } else if (formData.password.length < 6) {
@@ -78,16 +74,11 @@ const RegisterScreen = ({ onRegister }) => {
       newErrors.password = 'Пароль должен быть не более 100 символов';
     }
     
+    // Проверка подтверждения пароля
     if (!formData.confirmPassword.trim()) {
       newErrors.confirmPassword = 'Подтвердите пароль';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Пароли не совпадают';
-    }
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Введите ваше имя';
-    } else if (formData.name.length < 2) {
-      newErrors.name = 'Имя должно быть не менее 2 символов';
     }
     
     setErrors(newErrors);
@@ -96,49 +87,49 @@ const RegisterScreen = ({ onRegister }) => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    console.log('RegisterScreen: Form submitted');
     
     if (!validateForm()) {
+      console.log('RegisterScreen: Form validation failed');
       return;
     }
     
+    console.log('RegisterScreen: Form validation passed');
     setLoading(true);
     setErrors({});
 
     try {
+      // Отправляем только те поля, которые ожидает бэкенд
       const userData = {
         username: formData.username.trim(),
         email: formData.email.trim().toLowerCase(),
-        password: formData.password,
-        name: formData.name.trim()
+        password: formData.password
       };
       
-      console.log('Registering user:', { ...userData, password: '***' });
+      console.log('RegisterScreen: Sending user data to API:', { 
+        username: userData.username,
+        email: userData.email,
+        password: '***'
+      });
       
       const result = await onRegister(userData);
+      console.log('RegisterScreen: Registration result:', result);
       
-      if (result.success) {
-        console.log('Registration successful, navigating to /main');
+      if (result && result.success) {
+        console.log('RegisterScreen: Registration successful!');
+        console.log('RegisterScreen: Navigating to /main');
         navigate('/main');
       } else {
-        console.log('Registration failed:', result.message);
+        console.log('RegisterScreen: Registration failed');
         
-        // Обработка ошибок от API
-        if (result.message && result.message.toLowerCase().includes('email')) {
-          setErrors({ email: result.message });
-        } else if (result.message && result.message.toLowerCase().includes('username')) {
-          setErrors({ username: result.message });
-        } else if (result.message && result.message.toLowerCase().includes('имя')) {
-          setErrors({ username: result.message });
-        } else if (result.message && result.message.toLowerCase().includes('пользователь')) {
-          setErrors({ general: result.message });
-        } else {
-          setErrors({ general: result.message || 'Ошибка регистрации' });
-        }
+        const errorMessage = result?.message || 'Ошибка регистрации';
+        setErrors({ general: errorMessage });
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('RegisterScreen: Registration error:', error);
       setErrors({ general: 'Ошибка при регистрации. Попробуйте еще раз.' });
     } finally {
+      console.log('RegisterScreen: Setting loading to false');
       setLoading(false);
     }
   };
@@ -182,6 +173,8 @@ const RegisterScreen = ({ onRegister }) => {
               required
               minLength="3"
               maxLength="50"
+              pattern="[a-zA-Z0-9_]+"
+              title="Только буквы, цифры и подчеркивания"
               aria-label="Имя пользователя (логин)"
               aria-invalid={!!errors.username}
             />
