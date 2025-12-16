@@ -28,13 +28,6 @@ const NotesScreen = ({
     setNewNote('');
   };
 
-  // Удаление заметки
-  const handleDeleteNote = (id) => {
-    if (window.confirm('Вы уверены, что хотите удалить эту заметку?')) {
-      onDeleteNote(id);
-    }
-  };
-
   // Обработка нажатия Enter для добавления заметки
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -130,7 +123,6 @@ const NotesScreen = ({
                         <textarea
                           value={editingText}
                           onChange={(e) => onSetEditingText(e.target.value)}
-                          onKeyDown={(e) => handleEditKeyDown(e, note.id)}
                           className="note-edit-textarea"
                           rows="4"
                           maxLength="1000"
@@ -138,7 +130,6 @@ const NotesScreen = ({
                         />
                         <div className="note-edit-info">
                           <span className="edit-char-count">{editingText.length}/1000</span>
-                          <div className="edit-hint">Ctrl+Enter для сохранения, Esc для отмены</div>
                         </div>
                         <div className="note-edit-actions">
                           <button 
@@ -184,7 +175,7 @@ const NotesScreen = ({
                               Редактировать
                             </button>
                             <button 
-                              onClick={() => handleDeleteNote(note.id)}
+                              onClick={() => onDeleteNote(note.id)}
                               className="delete-btn"
                               aria-label="Удалить заметку"
                             >

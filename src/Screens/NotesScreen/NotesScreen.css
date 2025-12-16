@@ -245,10 +245,12 @@
   font-size: 0.85rem;
 }
 
-/* Стиль для даты изменения заметки */
 .note-updated {
-  font-style: italic;
-  margin-left: 0.3125rem;
+  margin-left: 10px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  color: #69505c;
+  font-size: 0.85rem;
 }
 
 /* Кнопки действий с заметкой */
