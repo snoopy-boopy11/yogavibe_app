@@ -1,7 +1,7 @@
 import math
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, select, delete
-from datetime import datetime, timedelta
+from sqlalchemy import and_, or_, select, delete
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 import models_db as models
 import schemas
@@ -105,7 +105,7 @@ class MentorCRUD:
     @staticmethod
     def create_mentor(db: Session, mentor_data: schemas.MentorCreate) -> models.Mentor:
         # Создать нового ментора
-        mentor = models.Mentor(**mentor_data.dict())
+        mentor = models.Mentor(**mentor_data.model_dump())
         db.add(mentor)
         db.commit()
         db.refresh(mentor)
@@ -153,7 +153,7 @@ class NoteCRUD:
             return None
         
         note.text = updates.text
-        note.updated_at = datetime.now()
+        note.updated_at = datetime.now(timezone.utc)
         
         db.commit()
         db.refresh(note)
@@ -203,6 +203,19 @@ class BookingCRUD:
         if not mentor.is_available:
             raise ValueError("Ментор временно недоступен")
         
+        conflicting_booking = db.scalar(
+            select(models.Booking).where(
+                and_(
+                    models.Booking.mentor_id == booking_data.mentor_id,
+                    models.Booking.session_date == booking_data.session_date,
+                    models.Booking.status.in_(["pending", "confirmed"])
+                )
+            )
+        )
+        
+        if conflicting_booking:
+            raise ValueError("На это время уже есть бронирование")
+        
         # Расчет цены
         hours = math.ceil(booking_data.duration_minutes / 60)
         price = mentor.price * hours
@@ -230,7 +243,7 @@ class BookingCRUD:
             return None
         
         booking.status = status
-        booking.updated_at = datetime.now()
+        booking.updated_at = datetime.now(timezone.utc)
         
         db.commit()
         db.refresh(booking)
@@ -242,7 +255,7 @@ class RefreshTokenCRUD:
     @staticmethod
     def create_token(db: Session, token: str, user_id: int, expires_delta: timedelta) -> models.RefreshToken:
         # Создать новый refresh токен
-        expires_at = datetime.now() + expires_delta
+        expires_at = datetime.now(timezone.utc) + expires_delta
         
         # Сначала проверяем, нет ли такого токена
         existing_token = db.query(models.RefreshToken).filter(
@@ -275,7 +288,7 @@ class RefreshTokenCRUD:
         stmt = select(models.RefreshToken).where(
             models.RefreshToken.token == token,
             models.RefreshToken.is_active == True,
-            models.RefreshToken.expires_at > datetime.now()
+            models.RefreshToken.expires_at > datetime.now(timezone.utc)
         )
         return db.scalar(stmt)
     
@@ -295,7 +308,7 @@ class RefreshTokenCRUD:
         # Очистить просроченные токены пользователя
         stmt = delete(models.RefreshToken).where(
             models.RefreshToken.user_id == user_id,
-            models.RefreshToken.expires_at <= datetime.now()
+            models.RefreshToken.expires_at <= datetime.now(timezone.utc)
         )
         db.execute(stmt)
         db.commit()
