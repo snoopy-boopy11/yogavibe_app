@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -186,7 +186,7 @@ async def refresh_token(
         )
     
     # Проверка срока действия
-    if refresh_token_obj.expires_at < datetime.now():
+    if refresh_token_obj.expires_at < datetime.now(timezone.utc):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh токен истек"
@@ -213,7 +213,7 @@ async def refresh_token(
 
 @router.post("/auth/logout")
 async def logout(
-    request: schemas.TokenRefreshRequest = None,
+    request: schemas.TokenRefreshRequest,
     db: Session = Depends(get_db)
 ):
     # Выход из системы - деактивация refresh токена
