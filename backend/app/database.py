@@ -1,6 +1,9 @@
+from typing import Generator
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import os
+from config import settings
 
 
 # Создание директории для базы данных
@@ -8,14 +11,14 @@ os.makedirs("data", exist_ok=True)
 
 
 # Подключение к SQLite базе данных
-SQLALCHEMY_DATABASE_URL = "sqlite:///./data/yogavibe.db"
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 
 # Создание движка базы данных
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False},
-    echo=True  # Логирование SQL запросов (для разработки)
+    echo=True  # Логирование SQL запросов
 )
 
 
@@ -34,8 +37,7 @@ class Base(DeclarativeBase):
 
 
 # Зависимость для получения сессии базы данных
-def get_db():
-    # Получение сессии базы данных
+def get_db() -> Generator:
     db = SessionLocal()
     try:
         yield db
