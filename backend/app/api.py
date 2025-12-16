@@ -96,7 +96,7 @@ async def login(
     )
     
     # Подготовка ответа с пользователем
-    user_response = schemas.UserResponse.from_orm(user)
+    user_response = schemas.UserResponse.model_validate(user)
     
     return schemas.AuthResponse(
         access_token=access_token,
@@ -139,7 +139,7 @@ async def register(
     )
     
     # Подготовка ответа
-    user_response = schemas.UserResponse.from_orm(user)
+    user_response = schemas.UserResponse.model_validate(user)
     
     return schemas.AuthResponse(
         access_token=access_token,
@@ -253,7 +253,7 @@ async def update_current_user(
             detail="Пользователь не найден"
         )
     
-    return schemas.UserResponse.from_orm(updated_user)
+    return schemas.UserResponse.model_validate(updated_user)
 
 
 # Эндпоинты менторов
@@ -269,7 +269,7 @@ async def get_mentors(
     mentors = crud.mentor_crud.get_mentors(
         db, skip=skip, limit=limit, city=city, yoga_style=yoga_style
     )
-    return [schemas.MentorResponse.from_orm(mentor) for mentor in mentors]
+    return [schemas.MentorResponse.model_validate(mentor) for mentor in mentors]
 
 
 @router.get("/mentors/{mentor_id}", response_model=schemas.MentorResponse)
@@ -285,7 +285,7 @@ async def get_mentor(
             detail="Ментор не найден"
         )
     
-    return schemas.MentorResponse.from_orm(mentor)
+    return schemas.MentorResponse.model_validate(mentor)
 
 
 # Эндпоинты заметок
@@ -300,7 +300,7 @@ async def get_notes(
     notes = crud.note_crud.get_user_notes(
         db, current_user.id, skip=skip, limit=limit
     )
-    return [schemas.NoteResponse.from_orm(note) for note in notes]
+    return [schemas.NoteResponse.model_validate(note) for note in notes]
 
 
 @router.post("/notes", response_model=schemas.NoteResponse)
@@ -311,7 +311,7 @@ async def create_note(
 ):
     # Создать новую заметку
     note = crud.note_crud.create_note(db, note_data, current_user.id)
-    return schemas.NoteResponse.from_orm(note)
+    return schemas.NoteResponse.model_validate(note)
 
 
 @router.put("/notes/{note_id}", response_model=schemas.NoteResponse)
@@ -336,7 +336,7 @@ async def update_note(
         )
     
     updated_note = crud.note_crud.update_note(db, note_id, note_data)
-    return schemas.NoteResponse.from_orm(updated_note)
+    return schemas.NoteResponse.model_validate(updated_note)
 
 
 @router.delete("/notes/{note_id}")
@@ -380,7 +380,7 @@ async def get_bookings(
     bookings = crud.booking_crud.get_user_bookings(
         db, current_user.id, skip=skip, limit=limit
     )
-    return [schemas.BookingResponse.from_orm(booking) for booking in bookings]
+    return [schemas.BookingResponse.model_validate(booking) for booking in bookings]
 
 
 @router.post("/bookings", response_model=schemas.BookingResponse)
@@ -392,7 +392,7 @@ async def create_booking(
     # Создать новое бронирование
     try:
         booking = crud.booking_crud.create_booking(db, booking_data, current_user.id)
-        return schemas.BookingResponse.from_orm(booking)
+        return schemas.BookingResponse.model_validate(booking)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -432,4 +432,4 @@ async def cancel_booking(
         )
     
     updated_booking = crud.booking_crud.update_booking_status(db, booking_id, "cancelled")
-    return schemas.BookingResponse.from_orm(updated_booking)
+    return schemas.BookingResponse.model_validate(updated_booking)
