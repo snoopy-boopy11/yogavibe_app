@@ -1,3 +1,4 @@
+from pathlib import Path
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 from database import Base, SessionLocal, engine 
@@ -7,6 +8,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR.mkdir(exist_ok=True)
+logger.info(f"Папка для БД: {DATA_DIR}")
 
 # Проверяем, существуют ли основные таблицы
 def check_tables_exist() -> bool:

@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Generator
 from fastapi import logger
 from sqlalchemy import create_engine, inspect
@@ -5,6 +6,9 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import os
 from config import settings
 
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR.mkdir(exist_ok=True)
 
 # Подключение к SQLite базе данных
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
