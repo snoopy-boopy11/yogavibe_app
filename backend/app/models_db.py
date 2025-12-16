@@ -82,7 +82,7 @@ class Booking(Base):
     mentor_id: Mapped[int] = mapped_column(ForeignKey("mentors.id"), nullable=False)
     
     # ---------- ИНФОРМАЦИЯ О СЕССИИ ----------
-    session_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    session_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration_minutes: Mapped[int] = mapped_column(Integer, default=60)  # продолжительность в минутах
     price: Mapped[int] = mapped_column(Integer, nullable=False)         # итоговая цена
     status: Mapped[str] = mapped_column(String, default="pending")      # pending, confirmed, cancelled, completed
@@ -104,7 +104,7 @@ class RefreshToken(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     token: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     

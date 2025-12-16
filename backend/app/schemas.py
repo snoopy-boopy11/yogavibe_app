@@ -1,6 +1,6 @@
 from typing import Optional, List
-from datetime import datetime
-from pydantic import BaseModel, EmailStr, validator, ConfigDict
+from datetime import datetime, timedelta, timezone
+from pydantic import BaseModel, EmailStr, field_serializer, validator, ConfigDict
 
 
 # ---------- БАЗОВЫЕ СХЕМЫ ПОЛЬЗОВАТЕЛЕЙ ----------
@@ -131,7 +131,13 @@ class NoteBase(BaseModel):
 
 class NoteCreate(NoteBase):
     """Схема для создания заметки"""
-    pass
+    @validator('text')
+    def validate_text_length(cls, v):
+        if len(v.strip()) < 1:
+            raise ValueError('Текст заметки не может быть пустым')
+        if len(v) > 1000:
+            raise ValueError('Текст заметки слишком длинный')
+        return v
 
 
 class NoteResponse(NoteBase):
@@ -141,6 +147,24 @@ class NoteResponse(NoteBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     
+    @field_serializer('created_at', 'updated_at')
+    def serialize_datetime(self, dt: Optional[datetime], _info) -> Optional[str]:
+        """Преобразование datetime в строку с временем Москвы"""
+        if dt is None:
+            return None
+        
+        # Если datetime без таймзоны, считаем что это UTC
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        
+        # Преобразуем в московское время (UTC+3)
+        moscow_tz = timezone(timedelta(hours=3))
+        moscow_time = dt.astimezone(moscow_tz)
+        
+        # Возвращаем в ISO формате
+        return moscow_time.isoformat()
+    
+
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -1,6 +1,11 @@
+from datetime import timedelta
+from dotenv import load_dotenv
+from pathlib import Path
 from pydantic_settings import BaseSettings
-from typing import Optional
 
+dotenv_path = Path(__file__).parent.parent / ".env"
+if dotenv_path.exists():
+    load_dotenv(dotenv_path=dotenv_path)
 
 class Settings(BaseSettings):
     # Настройки JWT
@@ -8,8 +13,14 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    TIMEZONE: str = "Europe/Moscow"
+
     DATABASE_URL: str = "sqlite:///./data/yogavibe.db"
-    DEBUG: bool = False
+    DEBUG: bool = True
+
+    @property
+    def moscow_tz(self) -> timedelta:
+        return timedelta(hours=3)
     
     class Config:
         env_file = ".env"
