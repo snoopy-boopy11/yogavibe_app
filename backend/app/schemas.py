@@ -3,32 +3,30 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, EmailStr, field_serializer, validator, ConfigDict
 
 
-# ---------- БАЗОВЫЕ СХЕМЫ ПОЛЬЗОВАТЕЛЕЙ ----------
-
+# Базовая схема пользователя
 class UserBase(BaseModel):
-    """Базовая схема пользователя"""
     username: str
     email: EmailStr
     
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема для создания пользователя
 class UserCreate(BaseModel):
-    """Схема для создания пользователя"""
     username: str
     email: EmailStr
     password: str
     
     @validator('email')
     def email_to_lower(cls, v: str) -> str:
-        """Приводит email к нижнему регистру"""
+        # Приводит email к нижнему регистру
         return v.lower()
     
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема для обновления пользователя
 class UserUpdate(BaseModel):
-    """Схема для обновления пользователя"""
     city: Optional[str] = None
     yoga_style: Optional[str] = None
     experience: Optional[str] = None
@@ -37,8 +35,8 @@ class UserUpdate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема ответа с пользователем
 class UserResponse(BaseModel):
-    """Схема ответа с пользователем"""
     id: int
     username: str
     email: str
@@ -52,18 +50,19 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# ---------- СХЕМЫ ДЛЯ АУТЕНТИФИКАЦИИ ----------
 
+# СХЕМЫ ДЛЯ АУТЕНТИФИКАЦИИ 
+
+# Схема для входа в систему
 class LoginRequest(BaseModel):
-    """Схема для входа в систему"""
-    login: str      # email или username
+    login: str
     password: str
     
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема токенов
 class Token(BaseModel):
-    """Схема токенов"""
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -71,24 +70,25 @@ class Token(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема для обновления токена
 class TokenRefreshRequest(BaseModel):
-    """Схема для обновления токена"""
     refresh_token: str
     
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема ответа аутентификации
 class AuthResponse(Token):
-    """Схема ответа аутентификации"""
     user: UserResponse
     
     model_config = ConfigDict(from_attributes=True)
 
 
-# ---------- СХЕМЫ ДЛЯ МЕНТОРОВ ----------
 
+# СХЕМЫ ДЛЯ МЕНТОРОВ 
+
+# Базовая схема ментора
 class MentorBase(BaseModel):
-    """Базовая схема ментора"""
     name: str
     description: str
     gender: str
@@ -99,8 +99,8 @@ class MentorBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема для создания ментора
 class MentorCreate(MentorBase):
-    """Схема для создания ментора"""
     rating: Optional[float] = 0.0
     experience_years: Optional[int] = 0
     photo_url: Optional[str] = None
@@ -108,8 +108,8 @@ class MentorCreate(MentorBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема ответа с ментором
 class MentorResponse(MentorBase):
-    """Схема ответа с ментором"""
     id: int
     rating: float
     experience_years: int
@@ -120,17 +120,18 @@ class MentorResponse(MentorBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# ---------- СХЕМЫ ДЛЯ ЗАМЕТОК ----------
 
+# СХЕМЫ ДЛЯ ЗАМЕТОК 
+
+# Базовая схема заметки
 class NoteBase(BaseModel):
-    """Базовая схема заметки"""
     text: str
     
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема для создания заметки
 class NoteCreate(NoteBase):
-    """Схема для создания заметки"""
     @validator('text')
     def validate_text_length(cls, v):
         if len(v.strip()) < 1:
@@ -140,8 +141,8 @@ class NoteCreate(NoteBase):
         return v
 
 
+# Схема ответа с заметкой
 class NoteResponse(NoteBase):
-    """Схема ответа с заметкой"""
     id: int
     user_id: int
     created_at: datetime
@@ -149,7 +150,7 @@ class NoteResponse(NoteBase):
     
     @field_serializer('created_at', 'updated_at')
     def serialize_datetime(self, dt: Optional[datetime], _info) -> Optional[str]:
-        """Преобразование datetime в строку с временем Москвы"""
+        # Преобразование datetime в строку с временем Москвы
         if dt is None:
             return None
         
@@ -168,10 +169,10 @@ class NoteResponse(NoteBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# ---------- СХЕМЫ ДЛЯ БРОНИРОВАНИЙ ----------
+# СХЕМЫ ДЛЯ БРОНИРОВАНИЙ 
 
+# Базовая схема бронирования
 class BookingBase(BaseModel):
-    """Базовая схема бронирования"""
     mentor_id: int
     session_date: datetime
     duration_minutes: int = 60
@@ -180,13 +181,13 @@ class BookingBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема для создания бронирования
 class BookingCreate(BookingBase):
-    """Схема для создания бронирования"""
     pass
 
 
+# Схема ответа с бронированием
 class BookingResponse(BookingBase):
-    """Схема ответа с бронированием"""
     id: int
     user_id: int
     price: int
@@ -197,8 +198,8 @@ class BookingResponse(BookingBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Схема для обновления бронирования
 class BookingUpdate(BaseModel):
-    """Схема для обновления бронирования"""
     status: Optional[str] = None
     notes: Optional[str] = None
     
