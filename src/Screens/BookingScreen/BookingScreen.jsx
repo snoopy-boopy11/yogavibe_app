@@ -1,36 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import BookingService from '../../services/BookingService';
 import './BookingScreen.css';
-
-// Утилита для генерации временных слотов
-const generateTimeSlots = () => {
-  const slots = [];
-  for (let hour = 9; hour <= 20; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      slots.push(time);
-    }
-  }
-  return slots;
-};
 
 const BookingScreen = () => {
   const { mentorId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  
   const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [bookingData, setBookingData] = useState({
-    date: '',
-    time: '',
-    duration: '60', // по умолчанию 60 минут
-    notes: '',
-    sessionType: 'individual' // индивидуальная или групповая
-  });
   const [isBooking, setIsBooking] = useState(false);
-  // Удалено: const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const [bookingData, setBookingData] = useState({
+    sessionDate: '',
+    time: '',
+    durationMinutes: '60',
+    notes: '',
+    sessionType: 'individual'
+  });
 
-  // Получаем данные ментора из location.state или загружаем
   useEffect(() => {
     if (location.state?.mentor) {
       setMentor(location.state.mentor);
@@ -40,10 +30,9 @@ const BookingScreen = () => {
     }
   }, [mentorId, location.state]);
 
-  const loadMentorData = () => {
+  const loadMentorData = async () => {
     setLoading(true);
-    // Моковые данные (можно вынести в отдельный файл)
-    setTimeout(() => {
+    try {
       const mockMentors = [
         { 
           id: 1, 
@@ -65,8 +54,12 @@ const BookingScreen = () => {
       
       const foundMentor = mockMentors.find(m => m.id === parseInt(mentorId));
       setMentor(foundMentor);
+    } catch (error) {
+      console.error('Error loading mentor:', error);
+      setError('Не удалось загрузить данные ментора');
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -80,55 +73,68 @@ const BookingScreen = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!bookingData.date || !bookingData.time) {
+    if (!bookingData.sessionDate || !bookingData.time) {
       alert('Пожалуйста, выберите дату и время для записи');
       return;
     }
 
-    setIsBooking(true);
+    const dateTimeString = `${bookingData.sessionDate}T${bookingData.time}:00`;
+    const sessionDate = new Date(dateTimeString);
 
-    // Имитация отправки на бэкенд
-    setTimeout(() => {
-      // Сохраняем запись в localStorage
-      const user = JSON.parse(localStorage.getItem('yogavibe_user') || '{}');
-      const allBookings = JSON.parse(localStorage.getItem('yogavibe_bookings') || '[]');
-      
-      const newBooking = {
-        id: Date.now(),
-        userId: user.id,
-        mentorId: mentor.id,
-        mentorName: mentor.name,
-        ...bookingData,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        totalPrice: calculateTotalPrice()
+    setIsBooking(true);
+    setError(null);
+
+    try {
+      const bookingToCreate = {
+        mentorId: parseInt(mentorId),
+        sessionDate: sessionDate.toISOString(),
+        durationMinutes: parseInt(bookingData.durationMinutes),
+        notes: bookingData.notes,
+        sessionType: bookingData.sessionType,
+        status: 'active'
       };
+
+      const createdBooking = await BookingService.createBooking(bookingToCreate);
       
-      allBookings.push(newBooking);
-      localStorage.setItem('yogavibe_bookings', JSON.stringify(allBookings));
-      
-      setIsBooking(false);
-      
-      // Переходим на экран подтверждения
       navigate('/booking-confirmation', { 
         state: { 
-          bookingData: newBooking,
+          bookingData: createdBooking,
           mentor: mentor 
         } 
       });
-    }, 1500);
+      
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      setError(error.body?.detail || error.message || 'Ошибка при создании записи');
+      alert('Не удалось создать запись. Пожалуйста, попробуйте снова.');
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   const calculateTotalPrice = () => {
-    const basePrice = mentor?.price || 0;
-    const durationMultiplier = parseInt(bookingData.duration) / 60;
-    const typeMultiplier = bookingData.sessionType === 'group' ? 0.7 : 1; // скидка на групповые
+    if (!mentor) return 0;
+    
+    const basePrice = mentor.price || 0;
+    const durationMultiplier = parseInt(bookingData.durationMinutes) / 60;
+    const typeMultiplier = bookingData.sessionType === 'group' ? 0.7 : 1;
     
     return Math.round(basePrice * durationMultiplier * typeMultiplier);
   };
 
   const handleBackClick = () => {
     navigate(`/mentor/${mentorId}`);
+  };
+
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 9; hour <= 20; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(time);
+      }
+    }
+    return slots;
   };
 
   if (loading) {
@@ -154,7 +160,6 @@ const BookingScreen = () => {
   return (
     <div className="booking-page">
       <div className="booking-container">
-        {/* Заголовок */}
         <div className="booking-header">
           <button 
             onClick={handleBackClick}
@@ -166,7 +171,12 @@ const BookingScreen = () => {
           <h1>Запись на сессию</h1>
         </div>
 
-        {/* Информация о менторе */}
+        {error && (
+          <div className="error-message">
+            ⚠️ {error}
+          </div>
+        )}
+
         <div className="mentor-summary">
           <h2>С ментором: {mentor.name}</h2>
           <div className="mentor-details">
@@ -185,20 +195,17 @@ const BookingScreen = () => {
           </div>
         </div>
 
-        {/* Форма записи */}
         <form className="booking-form" onSubmit={handleSubmit}>
-          {/* Удален блок booking-success, так как после успеха идет редирект */}
-
           <div className="form-section">
             <h3>Выберите дату и время</h3>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="date">Дата*</label>
+                <label htmlFor="sessionDate">Дата*</label>
                 <input
                   type="date"
-                  id="date"
-                  name="date"
-                  value={bookingData.date}
+                  id="sessionDate"
+                  name="sessionDate"
+                  value={bookingData.sessionDate}
                   onChange={handleInputChange}
                   min={new Date().toISOString().split('T')[0]}
                   required
@@ -224,11 +231,11 @@ const BookingScreen = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="duration">Длительность сессии</label>
+                <label htmlFor="durationMinutes">Длительность сессии</label>
                 <select
-                  id="duration"
-                  name="duration"
-                  value={bookingData.duration}
+                  id="durationMinutes"
+                  name="durationMinutes"
+                  value={bookingData.durationMinutes}
                   onChange={handleInputChange}
                 >
                   <option value="30">30 минут</option>
@@ -268,7 +275,6 @@ const BookingScreen = () => {
             </div>
           </div>
 
-          {/* Итоговая стоимость */}
           <div className="price-summary">
             <div className="price-details">
               <div className="price-row">
@@ -277,7 +283,7 @@ const BookingScreen = () => {
               </div>
               <div className="price-row">
                 <span>Длительность:</span>
-                <span>{bookingData.duration} мин</span>
+                <span>{bookingData.durationMinutes} мин</span>
               </div>
               <div className="price-row">
                 <span>Тип сессии:</span>
@@ -290,7 +296,6 @@ const BookingScreen = () => {
             </div>
           </div>
 
-          {/* Кнопки */}
           <div className="form-actions">
             <button
               type="button"
@@ -303,7 +308,7 @@ const BookingScreen = () => {
             <button
               type="submit"
               className="submit-btn"
-              disabled={isBooking || !bookingData.date || !bookingData.time}
+              disabled={isBooking || !bookingData.sessionDate || !bookingData.time}
             >
               {isBooking ? 'ОФОРМЛЕНИЕ...' : 'ПОДТВЕРДИТЬ ЗАПИСЬ'}
             </button>

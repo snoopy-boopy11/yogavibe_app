@@ -144,12 +144,6 @@
   font-size: 0.8rem;
 }
 
-.status-badge.pending {
-  background: rgba(255, 152, 0, 0.1);
-  color: #FF9800;
-  border: 1px solid #FF9800;
-}
-
 .status-active {
   background: rgba(76, 175, 80, 0.1);
   color: #4CAF50;
@@ -262,7 +256,7 @@
 /* Статистика */
 .bookings-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-top: 2rem;
 }
@@ -342,7 +336,7 @@
   transform: translateY(-2px);
 }
 
-/* Загрузка (дублирование с другими файлами) */
+/* Загрузка */
 .bookings-loading {
   display: flex;
   flex-direction: column;
@@ -359,20 +353,6 @@
   color: #69505c;
   font-size: 1.2rem;
   margin-top: 1rem;
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid rgba(105, 80, 92, 0.3);
-  border-radius: 50%;
-  border-top-color: #69505c;
-  animation: spin 1s ease-in-out infinite;
-  margin-bottom: 20px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 /* Адаптивность */

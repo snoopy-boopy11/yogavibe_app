@@ -1,3 +1,4 @@
+// src/screens/BookingConfirmationScreen/BookingConfirmationScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './BookingConfirmationScreen.css';
@@ -10,44 +11,22 @@ const BookingConfirmationScreen = () => {
   const [mentor, setMentor] = useState(null);
 
   useEffect(() => {
-    // Получаем данные из location.state или localStorage
-    if (location.state?.bookingData) {
+    if (location.state?.bookingData && location.state?.mentor) {
       setBookingData(location.state.bookingData);
       setMentor(location.state.mentor);
       setLoading(false);
     } else {
-      // Пытаемся загрузить последнюю запись из localStorage
-      loadLastBooking();
+      navigate('/main');
     }
-  }, [location]);
+  }, [location, navigate]);
 
-  const loadLastBooking = () => {
-    try {
-      const allBookings = JSON.parse(localStorage.getItem('yogavibe_bookings') || '[]');
-      const user = JSON.parse(localStorage.getItem('yogavibe_user') || '{}');
-      
-      if (allBookings.length > 0 && user.id) {
-        // Находим последнюю запись пользователя
-        const userBookings = allBookings.filter(b => b.userId === user.id);
-        if (userBookings.length > 0) {
-          const lastBooking = userBookings[userBookings.length - 1];
-          setBookingData(lastBooking);
-          
-          // Загружаем данные ментора
-          const mockMentors = JSON.parse(localStorage.getItem('yogavibe_mock_mentors') || '[]');
-          const foundMentor = mockMentors.find(m => m.id === lastBooking.mentorId);
-          setMentor(foundMentor);
-        }
-      }
-    } catch (error) {
-      console.error('Ошибка загрузки бронирования:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleGoToMain = () => {
+    navigate('/main');
   };
 
-  // Удалены неиспользуемые функции:
-  // handleGoToMyBookings и handleBookAnother
+  const handleGoToMyBookings = () => {
+    navigate('/my-bookings');
+  };
 
   if (loading) {
     return (
@@ -59,20 +38,9 @@ const BookingConfirmationScreen = () => {
   }
 
   if (!bookingData) {
-    return (
-      <div className="confirmation-not-found">
-        <h2>Информация о записи не найдена</h2>
-        <p>Вернитесь на главный экран и попробуйте записаться снова</p>
-        <div className="confirmation-actions">
-          <button onClick={() => navigate('/main')} className="action-btn link">
-            На главную
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
-  // Форматируем дату и время
   const formatDate = (dateString) => {
     try {
       const date = new Date(dateString);
@@ -87,14 +55,9 @@ const BookingConfirmationScreen = () => {
     }
   };
 
-  const formatTime = (timeString) => {
-    return timeString;
-  };
-
   return (
     <div className="confirmation-page">
       <div className="confirmation-container">
-        {/* Заголовок */}
         <div className="confirmation-header">
           <h1>Запись подтверждена!</h1>
           <p className="confirmation-subtitle">
@@ -102,12 +65,10 @@ const BookingConfirmationScreen = () => {
           </p>
         </div>
 
-        {/* Иконка успеха */}
         <div className="success-icon-large">
           ✓
         </div>
 
-        {/* Информация о записи */}
         <div className="booking-summary">
           <h2>Детали вашей записи</h2>
           
@@ -119,17 +80,17 @@ const BookingConfirmationScreen = () => {
             
             <div className="summary-item">
               <span className="summary-label">Дата:</span>
-              <span className="summary-value">{formatDate(bookingData.date)}</span>
+              <span className="summary-value">{formatDate(bookingData.sessionDate)}</span>
             </div>
             
             <div className="summary-item">
               <span className="summary-label">Время:</span>
-              <span className="summary-value">{formatTime(bookingData.time)}</span>
+              <span className="summary-value">{bookingData.time}</span>
             </div>
             
             <div className="summary-item">
               <span className="summary-label">Длительность:</span>
-              <span className="summary-value">{bookingData.duration} минут</span>
+              <span className="summary-value">{bookingData.durationMinutes} минут</span>
             </div>
             
             <div className="summary-item">
@@ -141,17 +102,23 @@ const BookingConfirmationScreen = () => {
             
             <div className="summary-item">
               <span className="summary-label">Стоимость:</span>
-              <span className="summary-value price">{bookingData.totalPrice} ₽</span>
+              <span className="summary-value price">{bookingData.totalPrice || bookingData.price} ₽</span>
             </div>
             
             <div className="summary-item full-width">
               <span className="summary-label">Номер записи:</span>
               <span className="summary-value booking-id">#{bookingData.id}</span>
             </div>
+            
+            <div className="summary-item full-width">
+              <span className="summary-label">Статус:</span>
+              <span className="summary-value status-confirmed">
+                ✅ Активная
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Контактная информация */}
         <div className="contact-info">
           <h3>Контактная информация</h3>
           <p>
@@ -160,10 +127,12 @@ const BookingConfirmationScreen = () => {
           </p>
         </div>
 
-        {/* Кнопки действий */}
         <div className="confirmation-actions">
-          <button onClick={() => navigate('/main')} className="action-btn link">
-            Вернуться на главную
+          <button onClick={handleGoToMain} className="action-btn primary">
+            На главную
+          </button>
+          <button onClick={handleGoToMyBookings} className="action-btn secondary">
+            Мои записи
           </button>
         </div>
       </div>
