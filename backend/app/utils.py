@@ -6,6 +6,7 @@ from config import settings
 
 
 # Хеширование паролей - используем sha256_crypt
+
 pwd_context = CryptContext(
     schemes=["sha256_crypt", "bcrypt"],
     deprecated="auto",
@@ -24,6 +25,7 @@ def get_password_hash(password: str) -> str:
 
 
 # Функции для работы с JWT
+
 def create_access_token(data: Dict, expires_delta: Optional[timedelta] = None) -> str:
     # Создание access токена
     to_encode = data.copy()
