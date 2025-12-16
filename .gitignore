@@ -11,3 +11,5 @@ venv/
 *.env
 *.sqlite
 *.db
+test/
+add.py
