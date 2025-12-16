@@ -6,10 +6,6 @@ import os
 from config import settings
 
 
-# Создание директории для базы данных
-os.makedirs("data", exist_ok=True)
-
-
 # Подключение к SQLite базе данных
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     TIMEZONE: str = "Europe/Moscow"
 
-    DATABASE_URL: str = "sqlite:///./data/yogavibe.db"
+    DATABASE_URL: str = "sqlite:///./yogavibe.db"
     DEBUG: bool = True
 
     @property
