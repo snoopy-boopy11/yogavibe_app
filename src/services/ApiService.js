@@ -111,6 +111,13 @@ class ApiService {
   // Обновление access токена с помощью refresh токена
   static async refreshAccessToken() {
     const refreshToken = localStorage.getItem('yogavibe_refresh_token');
+  
+    // Если токен выглядит как mock токен, не пытаться обновлять
+    if (refreshToken && refreshToken.includes('mock_')) {
+      console.log('Mock token detected, clearing auth');
+      this.clearAuth();
+      return false;
+    }
     
     if (!refreshToken) {
       console.log('No refresh token available');

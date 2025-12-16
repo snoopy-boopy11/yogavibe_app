@@ -5,6 +5,22 @@ class AuthService {
   // Проверка аутентификации
   static async checkAuth() {
     try {
+      const token = localStorage.getItem('yogavibe_token');
+      const refreshToken = localStorage.getItem('yogavibe_refresh_token');
+      
+      // Проверяем, не mock ли токены
+      if (token && token.includes('mock_')) {
+        console.log('Mock access token found, clearing auth');
+        this.clearAuth();
+        return { isAuthenticated: false };
+      }
+      
+      if (refreshToken && refreshToken.includes('mock_')) {
+        console.log('Mock refresh token found, clearing auth');
+        this.clearAuth();
+        return { isAuthenticated: false };
+      }
+      
       console.log('AuthService: Checking authentication...');
       
       if (!ApiService.isAuthenticated()) {
