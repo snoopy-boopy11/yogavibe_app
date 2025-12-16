@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import UserService from '../../services/UserService';
+import AuthService from '../../services/AuthService';
 import './ProfileScreen.css';
 
-const ProfileScreen = ({ user, onLogout }) => {
-  const navigate = useNavigate();
+const ProfileScreen = ({ user, onUpdateProfile }) => {
   const fileInputRef = useRef(null);
   
-  // Состояние профиля
+  // Состояния профиля
   const [profile, setProfile] = useState({
-    fullName: '',
-    age: '',
+    // Бэкендные поля (сохраняются на сервер)
     city: '',
-    contactInfo: '',
-    experienceYears: '',
-    knownStyles: '',
+    yoga_style: '',
+    experience: '',
     goals: '',
+    
+    // Локальные поля (только в localStorage)
+    username: '', // Будет заполнено из бэкенда, но не редактируемое
+    age: '',
+    contactInfo: '',
+    knownStyles: '',
     healthInfo: '',
     preferredFormat: '',
     meetingFrequency: '',
@@ -25,50 +29,133 @@ const ProfileScreen = ({ user, onLogout }) => {
     photo: null
   });
 
+  const [currentUser, setCurrentUser] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [tempValue, setTempValue] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [error, setError] = useState(null);
 
   // Загрузка профиля при монтировании
   useEffect(() => {
     loadProfile();
   }, []);
 
-  const loadProfile = () => {
+  const loadProfile = async () => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const userId = user?.id || JSON.parse(localStorage.getItem('yogavibe_user')).id;
-      const allProfiles = JSON.parse(localStorage.getItem('yogavibe_profiles') || '{}');
-      const userProfile = allProfiles[userId] || profile;
+      // Получаем ID пользователя
+      const userId = user?.id || (AuthService.getCurrentUser()?.id);
+      if (!userId) {
+        throw new Error('Пользователь не найден');
+      }
+
+      // 1. Загружаем данные с сервера
+      console.log('ProfileScreen: Loading profile from server...');
+      const serverProfile = await UserService.getProfile();
+      setCurrentUser(serverProfile);
       
-      if (userProfile.photo) {
-        setPhotoPreview(userProfile.photo);
+      // 2. Загружаем локальные данные
+      const localProfile = UserService.getLocalProfile(userId);
+      
+      // 3. Объединяем данные
+      const mergedProfile = {
+        // Бэкендные поля
+        city: serverProfile.city || '',
+        yoga_style: serverProfile.yoga_style || '',
+        experience: serverProfile.experience || '',
+        goals: serverProfile.goals || '',
+        username: serverProfile.username || '', // Берем username из бэкенда
+        
+        // Локальные поля
+        age: localProfile.age || '',
+        contactInfo: localProfile.contactInfo || '',
+        knownStyles: localProfile.knownStyles || localProfile.yoga_style || '',
+        healthInfo: localProfile.healthInfo || '',
+        preferredFormat: localProfile.preferredFormat || '',
+        meetingFrequency: localProfile.meetingFrequency || '',
+        mentorshipDuration: localProfile.mentorshipDuration || '',
+        communicationStyle: localProfile.communicationStyle || '',
+        mentorPreferences: localProfile.mentorPreferences || '',
+        additionalInfo: localProfile.additionalInfo || '',
+        photo: localProfile.photo || null
+      };
+      
+      setProfile(mergedProfile);
+      
+      // Устанавливаем фото превью
+      if (localProfile.photo) {
+        setPhotoPreview(localProfile.photo);
       }
       
-      setProfile(userProfile);
+      console.log('ProfileScreen: Profile loaded successfully');
+      
     } catch (error) {
-      console.error('Ошибка загрузки профиля:', error);
+      console.error('ProfileScreen: Error loading profile:', error);
+      setError(error.message || 'Ошибка загрузки профиля');
+      
+      // Fallback: пытаемся загрузить только локальные данные
+      try {
+        const userId = user?.id || (AuthService.getCurrentUser()?.id);
+        if (userId) {
+          const localProfile = UserService.getLocalProfile(userId);
+          setProfile(prev => ({ 
+            ...prev, 
+            ...localProfile,
+            username: user?.username || AuthService.getCurrentUser()?.username || ''
+          }));
+          
+          if (localProfile.photo) {
+            setPhotoPreview(localProfile.photo);
+          }
+        }
+      } catch (localError) {
+        console.error('ProfileScreen: Error loading local profile:', localError);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // Редактирование полей
   const startEditing = (fieldName, currentValue) => {
+    // Не разрешаем редактировать username
+    if (fieldName === 'username') {
+      alert('Имя пользователя нельзя изменить');
+      return;
+    }
     setEditingField(fieldName);
     setTempValue(currentValue);
   };
 
-  const saveField = () => {
+  const saveField = async () => {
     if (editingField && tempValue !== undefined) {
+      const fieldName = editingField;
+      const newValue = tempValue;
+      
+      // Обновляем локальное состояние
       const updatedProfile = {
         ...profile,
-        [editingField]: tempValue
+        [fieldName]: newValue
       };
-      
       setProfile(updatedProfile);
+      
       setEditingField(null);
       setTempValue('');
-      saveProfile(updatedProfile);
+      
+      // Автосохранение только для бэкендных полей
+      const backendFields = ['city', 'yoga_style', 'experience', 'goals'];
+      if (backendFields.includes(fieldName)) {
+        await saveProfileToBackend(updatedProfile);
+      } else {
+        // Для локальных полей сохраняем сразу
+        await saveLocalProfile(updatedProfile);
+      }
     }
   };
 
@@ -78,7 +165,7 @@ const ProfileScreen = ({ user, onLogout }) => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       saveField();
     } else if (e.key === 'Escape') {
@@ -86,12 +173,79 @@ const ProfileScreen = ({ user, onLogout }) => {
     }
   };
 
+  // Сохранение профиля в бэкенд
+  const saveProfileToBackend = async (profileData) => {
+    setIsSaving(true);
+    setError(null);
+    
+    try {
+      const backendData = {
+        city: profileData.city || null,
+        yoga_style: profileData.yoga_style || null,
+        experience: profileData.experience || null,
+        goals: profileData.goals || null
+      };
+      
+      console.log('ProfileScreen: Saving to backend:', backendData);
+      const updatedUser = await UserService.updateProfile(backendData);
+      
+      // Обновляем текущего пользователя
+      if (updatedUser) {
+        setCurrentUser(updatedUser);
+      }
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      
+      // Вызываем callback из MainScreen если он есть
+      if (onUpdateProfile && currentUser?.id) {
+        onUpdateProfile(currentUser.id, backendData);
+      }
+      
+    } catch (error) {
+      console.error('ProfileScreen: Error saving to backend:', error);
+      setError(error.body?.detail || error.message || 'Ошибка сохранения');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Сохранение локального профиля
+  const saveLocalProfile = async (profileData) => {
+    try {
+      const userId = currentUser?.id || user?.id;
+      if (!userId) return;
+      
+      const localData = {
+        age: profileData.age,
+        contactInfo: profileData.contactInfo,
+        knownStyles: profileData.knownStyles,
+        healthInfo: profileData.healthInfo,
+        preferredFormat: profileData.preferredFormat,
+        meetingFrequency: profileData.meetingFrequency,
+        mentorshipDuration: profileData.mentorshipDuration,
+        communicationStyle: profileData.communicationStyle,
+        mentorPreferences: profileData.mentorPreferences,
+        additionalInfo: profileData.additionalInfo,
+        photo: profileData.photo
+      };
+      
+      UserService.saveLocalProfile(userId, localData);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      
+    } catch (error) {
+      console.error('ProfileScreen: Error saving local profile:', error);
+    }
+  };
+
+  // Обработка загрузки фото
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     if (!file.type.match('image.*')) {
-      alert('Пожалуйста, выберите изображение');
+      alert('Пожалуйста, выберите изображение (JPG, PNG, GIF)');
       return;
     }
 
@@ -107,14 +261,22 @@ const ProfileScreen = ({ user, onLogout }) => {
       const base64String = reader.result;
       setPhotoPreview(base64String);
       
+      // Обновляем профиль
       const updatedProfile = {
         ...profile,
         photo: base64String
       };
-      
       setProfile(updatedProfile);
-      saveProfile(updatedProfile);
+      
+      // Сохраняем локально
+      const userId = currentUser?.id || user?.id;
+      if (userId) {
+        UserService.saveProfilePhoto(userId, base64String);
+      }
+      
       setIsUploadingPhoto(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
     };
 
     reader.onerror = () => {
@@ -125,7 +287,8 @@ const ProfileScreen = ({ user, onLogout }) => {
     reader.readAsDataURL(file);
   };
 
-  const triggerFileInput = () => {
+  // Функция для клика по фото
+  const handlePhotoClick = () => {
     fileInputRef.current.click();
   };
 
@@ -137,60 +300,79 @@ const ProfileScreen = ({ user, onLogout }) => {
         ...profile,
         photo: null
       };
-      
       setProfile(updatedProfile);
-      saveProfile(updatedProfile);
+      
+      // Удаляем из localStorage
+      const userId = currentUser?.id || user?.id;
+      if (userId) {
+        UserService.saveProfilePhoto(userId, null);
+      }
     }
   };
 
-  const saveProfile = async (profileData = null) => {
+  // Сохранение всех данных
+  const handleSaveAll = async () => {
     setIsSaving(true);
+    setError(null);
     
     try {
-      const profileToSave = profileData || profile;
-      const userId = user?.id || JSON.parse(localStorage.getItem('yogavibe_user')).id;
+      // Сохраняем бэкендные поля
+      await saveProfileToBackend(profile);
       
-      const allProfiles = JSON.parse(localStorage.getItem('yogavibe_profiles') || '{}');
-      allProfiles[userId] = profileToSave;
-      localStorage.setItem('yogavibe_profiles', JSON.stringify(allProfiles));
-      
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      // Сохраняем локальные поля
+      await saveLocalProfile(profile);
       
     } catch (error) {
-      console.error('Ошибка сохранения профиля:', error);
+      console.error('ProfileScreen: Error saving all:', error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleSaveAll = () => {
-    saveProfile();
+  // Специальный рендер для неизменяемого поля
+  const renderReadOnlyField = (label, fieldName, value) => {
+    return (
+      <div className="profile-field" key={fieldName}>
+        <div className="field-header">
+          <label className="field-label">
+            {label}:
+            <span className="read-only-badge" title="Нельзя изменить">🔒</span>
+          </label>
+        </div>
+        <div className="field-value read-only">
+          {value || 'Не указано'}
+        </div>
+      </div>
+    );
   };
 
-  const handleLogout = () => {
-    if (window.confirm('Вы уверены, что хотите выйти из аккаунта?')) {
-      onLogout();
-      navigate('/login');
+  // Рендер поля с учетом типа
+  const renderField = (label, fieldName, value, isTextArea = false, isBackendField = false) => {
+    // Для поля username используем специальный рендер
+    if (fieldName === 'username') {
+      return renderReadOnlyField(label, fieldName, value);
     }
-  };
-
-  const renderField = (label, fieldName, value, isTextArea = false) => {
+    
     const isEditing = editingField === fieldName;
     
     return (
       <div className="profile-field" key={fieldName}>
         <div className="field-header">
-          <label className="field-label">{label}:</label>
+          <label className="field-label">
+            {label}:
+            {isBackendField && (
+              <span className="backend-badge" title="Синхронизируется с сервером">🌐</span>
+            )}
+          </label>
           {!isEditing && value && (
             <button 
-                className="profile-edit-btn"
-                onClick={() => startEditing(fieldName, value)}
-                aria-label={`Редактировать ${label.toLowerCase()}`}
+              className="profile-edit-btn"
+              onClick={() => startEditing(fieldName, value)}
+              aria-label={`Редактировать ${label.toLowerCase()}`}
             >
-                ✎
+              ✎
             </button>
-            )}
+          )}
         </div>
         
         {isEditing ? (
@@ -250,17 +432,36 @@ const ProfileScreen = ({ user, onLogout }) => {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="profile-page">
+        <div className="profile-content">
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Загрузка профиля...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="profile-page">
       <div className="profile-content">
         <div className="profile-card">
+          {error && (
+            <div className="error-message">
+              ⚠️ {error}
+            </div>
+          )}
+          
           <div className="profile-layout">
-            {/* Левая колонка - только фото */}
+            {/* Левая колонка - фото и личная информация */}
             <div className="profile-left">
               <div className="photo-section">
                 <div 
                   className={`photo-placeholder ${photoPreview ? 'has-photo' : ''}`}
-                  onClick={triggerFileInput}
+                  onClick={handlePhotoClick}
                 >
                   {photoPreview ? (
                     <img 
@@ -275,7 +476,9 @@ const ProfileScreen = ({ user, onLogout }) => {
                     </div>
                   )}
                   <div className="photo-overlay">
-                    <span className="upload-text">Изменить фото</span>
+                    <span className="upload-text">
+                      {isUploadingPhoto ? 'Загрузка...' : 'Изменить фото'}
+                    </span>
                   </div>
                 </div>
                 
@@ -285,6 +488,7 @@ const ProfileScreen = ({ user, onLogout }) => {
                   onChange={handlePhotoUpload}
                   accept="image/*"
                   className="file-input"
+                  disabled={isUploadingPhoto}
                 />
                 
                 <div className="photo-actions">
@@ -292,8 +496,9 @@ const ProfileScreen = ({ user, onLogout }) => {
                     <button 
                       className="remove-btn"
                       onClick={removePhoto}
+                      disabled={isUploadingPhoto}
                     >
-                      Удалить фото
+                      {isUploadingPhoto ? 'Загрузка...' : 'Удалить фото'}
                     </button>
                   )}
                 </div>
@@ -309,21 +514,22 @@ const ProfileScreen = ({ user, onLogout }) => {
               <div className="sections-container">
                 <div className="profile-section">
                   <h3>ОБО МНЕ</h3>
-                  {renderField('ФИО', 'fullName', profile.fullName)}
+                  {renderField('Имя пользователя', 'username', profile.username)}
                   {renderField('Возраст', 'age', profile.age)}
-                  {renderField('Город', 'city', profile.city)}
+                  {renderField('Город', 'city', profile.city, false, true)}
                   {renderField('Контактные данные', 'contactInfo', profile.contactInfo, true)}
                 </div>
 
                 <div className="profile-section">
                   <h3>ОПЫТ В ЙОГЕ</h3>
-                  {renderField('Стаж практики', 'experienceYears', profile.experienceYears)}
+                  {renderField('Стаж практики', 'experience', profile.experience, false, true)}
                   {renderField('Знакомые стили', 'knownStyles', profile.knownStyles, true)}
+                  {renderField('Предпочитаемый стиль', 'yoga_style', profile.yoga_style, false, true)}
                 </div>
 
                 <div className="profile-section">
                   <h3>ЦЕЛИ И ЗАПРОСЫ</h3>
-                  {renderField('Основные цели', 'goals', profile.goals, true)}
+                  {renderField('Основные цели', 'goals', profile.goals, true, true)}
                   {renderField('Состояние здоровья', 'healthInfo', profile.healthInfo, true)}
                 </div>
 
