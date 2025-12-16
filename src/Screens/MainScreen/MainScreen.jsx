@@ -6,27 +6,16 @@ import ProfileScreen from '../ProfileScreen/ProfileScreen';
 import MyBookingsScreen from '../MyBookingsScreen/MyBookingsScreen';
 import NotesService from '../../services/NotesService';
 import AuthService from '../../services/AuthService';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-
-import mentor1 from './mentors/1.jpg';
-import mentor2 from './mentors/2.jpg';
-import mentor3 from './mentors/3.jpg';
-import mentor4 from './mentors/4.jpg';
-import mentor5 from './mentors/5.jpg';
-import mentor6 from './mentors/6.jpg';
-import mentor7 from './mentors/7.jpg';
-import mentor8 from './mentors/8.jpg';
 
 const mentors = [
-  { id: 1, name: "Анна Иванова", description: "Опытный инструктор по хатха йоге с 5-летним стажем", gender: "female", city: "Москва", price: 2500, yogaStyle: "Хатха", photo: mentor1 },
-  { id: 2, name: "Дмитрий Петров", description: "Специалист по аштанга йоге и медитации", gender: "male", city: "Санкт-Петербург", price: 3000, yogaStyle: "Аштанга", photo: mentor2 },
-  { id: 3, name: "Мария Сидорова", description: "Йога для беременных и восстановительная йога", gender: "female", city: "Новосибирск", price: 2000, yogaStyle: "Восстановительная", photo: mentor3 },
-  { id: 4, name: "Алексей Козлов", description: "Инструктор по силовой йоге и йоге для мужчин", gender: "male", city: "Екатеринбург", price: 2800, yogaStyle: "Силовая", photo: mentor4 },
-  { id: 5, name: "Елена Смирнова", description: "Кундалини йога и работа с чакрами", gender: "female", city: "Москва", price: 3200, yogaStyle: "Кундалини", photo: mentor5 },
-  { id: 6, name: "Сергей Николаев", description: "Йогатерапия и работа с травмами", gender: "male", city: "Казань", price: 2700, yogaStyle: "Йогатерапия", photo: mentor6 },
-  { id: 7, name: "Ольга Кузнецова", description: "Йога для начинающих и стретчинг", gender: "female", city: "Нижний Новгород", price: 1800, yogaStyle: "Для начинающих", photo: mentor7 },
-  { id: 8, name: "Иван Морозов", description: "Бикрам йога и горячая йога", gender: "male", city: "Челябинск", price: 2900, yogaStyle: "Бикрам", photo: mentor8 },
+  { id: 1, name: "Анна Иванова", description: "Опытный инструктор по хатха йоге с 5-летним стажем", gender: "female", city: "Москва", price: 2500, yogaStyle: "Хатха", photo: null },
+  { id: 2, name: "Дмитрий Петров", description: "Специалист по аштанга йоге и медитации", gender: "male", city: "Санкт-Петербург", price: 3000, yogaStyle: "Аштанга", photo: null },
+  { id: 3, name: "Мария Сидорова", description: "Йога для беременных и восстановительная йога", gender: "female", city: "Новосибирск", price: 2000, yogaStyle: "Восстановительная", photo: null },
+  { id: 4, name: "Алексей Козлов", description: "Инструктор по силовой йоге и йоге для мужчин", gender: "male", city: "Екатеринбург", price: 2800, yogaStyle: "Силовая", photo: null },
+  { id: 5, name: "Елена Смирнова", description: "Кундалини йога и работа с чакрами", gender: "female", city: "Москва", price: 3200, yogaStyle: "Кундалини", photo: null },
+  { id: 6, name: "Сергей Николаев", description: "Йогатерапия и работа с травмами", gender: "male", city: "Казань", price: 2700, yogaStyle: "Йогатерапия", photo: null },
+  { id: 7, name: "Ольга Кузнецова", description: "Йога для начинающих и стретчинг", gender: "female", city: "Нижний Новгород", price: 1800, yogaStyle: "Для начинающих", photo: null },
+  { id: 8, name: "Иван Морозов", description: "Бикрам йога и горячая йога", gender: "male", city: "Челябинск", price: 2900, yogaStyle: "Бикрам", photo: null },
   { id: 9, name: "Татьяна Павлова", description: "Интегральная йога и философия", gender: "female", city: "Самара", price: 2200, yogaStyle: "Интегральная", photo: null },
 ];
 
@@ -61,7 +50,7 @@ const yogaStyles = [
   "Виньяса",
   "Айенгара",
   "Инь-йога"
-];
+]
 
 const PAGE_SIZE = 3;
 
@@ -139,12 +128,10 @@ const MainScreen = ({ user, onLogout }) => {
       if (result.success) {
         setNotes(result.data || []);
       } else {
-        toast.error(result.message || 'Ошибка загрузки заметок');
         setNotes([]);
       }
     } catch (error) {
       console.error('Error loading notes:', error);
-      toast.error('Ошибка загрузки заметок');
       setNotes([]);
     } finally {
       setNotesLoading(false);
@@ -156,7 +143,6 @@ const MainScreen = ({ user, onLogout }) => {
   // Добавление новой заметки
   const addNote = async (text) => {
     if (!text.trim()) {
-      toast.error('Заметка не может быть пустой');
       return;
     }
     
@@ -164,20 +150,16 @@ const MainScreen = ({ user, onLogout }) => {
       const result = await NotesService.createNote(text);
       if (result.success) {
         setNotes(prevNotes => [result.data, ...prevNotes]);
-        toast.success('Заметка добавлена');
       } else {
-        toast.error(result.message || 'Ошибка при добавлении заметки');
       }
     } catch (error) {
       console.error('Error creating note:', error);
-      toast.error('Ошибка при добавлении заметки');
     }
   };
 
   // Обновление существующей заметки
   const updateNote = async (id, text) => {
     if (!text.trim()) {
-      toast.error('Заметка не может быть пустой');
       return;
     }
     
@@ -189,18 +171,16 @@ const MainScreen = ({ user, onLogout }) => {
             note.id === id ? result.data : note
           )
         );
-        toast.success('Заметка обновлена');
       } else {
-        toast.error(result.message || 'Ошибка при обновлении заметки');
       }
     } catch (error) {
       console.error('Error updating note:', error);
-      toast.error('Ошибка при обновлении заметки');
     }
   };
 
   // Удаление заметки
   const deleteNote = async (id) => {
+    // Перенести confirm сюда
     if (!window.confirm('Вы уверены, что хотите удалить эту заметку?')) {
       return;
     }
@@ -209,19 +189,15 @@ const MainScreen = ({ user, onLogout }) => {
       const result = await NotesService.deleteNote(id);
       if (result.success) {
         setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
-        toast.success('Заметка удалена');
         
         // Если удаляем редактируемую заметку, сбрасываем режим редактирования
         if (editingNoteId === id) {
           setEditingNoteId(null);
           setEditingText('');
         }
-      } else {
-        toast.error(result.message || 'Ошибка при удалении заметки');
       }
     } catch (error) {
       console.error('Error deleting note:', error);
-      toast.error('Ошибка при удалении заметки');
     }
   };
 
@@ -242,17 +218,6 @@ const MainScreen = ({ user, onLogout }) => {
   const cancelEditing = () => {
     setEditingNoteId(null);
     setEditingText('');
-  };
-
-  // Обработка клавиш при редактировании
-  const handleEditKeyDown = (e, noteId) => {
-    if (e.key === 'Enter' && e.ctrlKey) {
-      e.preventDefault();
-      saveEditing(noteId);
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      cancelEditing();
-    }
   };
 
   // ========== ФИЛЬТРАЦИЯ МЕНТОРОВ ==========
@@ -371,12 +336,6 @@ const MainScreen = ({ user, onLogout }) => {
       onLogout();
       navigate('/login');
     }
-  };
-
-  const handleUpdateProfile = async (userId, profileData) => {
-    console.log('Обновление профиля:', { userId, profileData });
-    // Здесь будет логика для обновления профиля на бэкенде
-    return { success: true };
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -626,9 +585,6 @@ const MainScreen = ({ user, onLogout }) => {
               ) : (
                 <div className="no-results">
                   <p>По вашему запросу менторов не найдено</p>
-                  <button className="clear-filters-btn" onClick={clearFilters}>
-                    Сбросить фильтры
-                  </button>
                 </div>
               )}
             </div>
@@ -688,30 +644,16 @@ const MainScreen = ({ user, onLogout }) => {
           onSaveEditing={saveEditing}
           onCancelEditing={cancelEditing}
           onSetEditingText={setEditingText}
-          handleEditKeyDown={handleEditKeyDown}
           loading={notesLoading}
         />
       )}
       
       {activeNav === 'МОЯ АНКЕТА' && (
         <ProfileScreen 
-          user={userInfo} 
-          onUpdateProfile={handleUpdateProfile}
+          user={userInfo}
         />
       )}
 
-      <ToastContainer 
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
     </div>
   );
 };

@@ -173,7 +173,6 @@ const RegisterScreen = ({ onRegister }) => {
               required
               minLength="3"
               maxLength="50"
-              pattern="[a-zA-Z0-9_]+"
               title="Только буквы, цифры и подчеркивания"
               aria-label="Имя пользователя (логин)"
               aria-invalid={!!errors.username}

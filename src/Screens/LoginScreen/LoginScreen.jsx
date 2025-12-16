@@ -34,21 +34,8 @@ const LoginScreen = ({ onLogin }) => {
       return false;
     }
     
-    if (formData.login.includes('@')) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.login)) {
-        setError('Введите корректный email');
-        return false;
-      }
-    }
-    
     if (!formData.password.trim()) {
       setError('Введите пароль');
-      return false;
-    }
-    
-    if (formData.password.length < 6) {
-      setError('Пароль должен содержать минимум 6 символов');
       return false;
     }
     
