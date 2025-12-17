@@ -64,7 +64,7 @@ def get_database_stats():
 
 
 # Создание моковых данных менторов
-def create_mock_mentors(db: Session):    
+def create_mock_mentors(db: Session):
     mock_mentors = [
         {
             "name": "Анна Иванова",
@@ -134,6 +134,78 @@ def create_mock_mentors(db: Session):
             "price": 2700,
             "yoga_style": "Йогатерапия",
             "rating": 4.5,
+            "experience_years": 6,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Ольга Кузнецова",
+            "description": "Йога для начинающих и стретчинг",
+            "gender": "female",
+            "city": "Нижний Новгород",
+            "price": 1800,
+            "yoga_style": "Для начинающих",
+            "rating": 4.4,
+            "experience_years": 3,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Иван Морозов",
+            "description": "Бикрам йога и горячая йога",
+            "gender": "male",
+            "city": "Челябинск",
+            "price": 2900,
+            "yoga_style": "Бикрам",
+            "rating": 4.7,
+            "experience_years": 5,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Татьяна Павлова",
+            "description": "Интегральная йога и философия",
+            "gender": "female",
+            "city": "Самара",
+            "price": 2200,
+            "yoga_style": "Интегральная",
+            "rating": 4.6,
+            "experience_years": 4,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Михаил Орлов",
+            "description": "Виньяса флоу йога",
+            "gender": "male",
+            "city": "Омск",
+            "price": 2600,
+            "yoga_style": "Виньяса",
+            "rating": 4.5,
+            "experience_years": 5,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Светлана Федорова",
+            "description": "Инь йога и глубокий стретчинг",
+            "gender": "female",
+            "city": "Ростов-на-Дону",
+            "price": 2300,
+            "yoga_style": "Инь-йога",
+            "rating": 4.8,
+            "experience_years": 7,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Андрей Соколов",
+            "description": "Айенгара йога и работа с пропсами",
+            "gender": "male",
+            "city": "Уфа",
+            "price": 2700,
+            "yoga_style": "Айенгара",
+            "rating": 4.7,
             "experience_years": 6,
             "photo_url": None,
             "is_available": True
