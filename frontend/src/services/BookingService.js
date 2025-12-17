@@ -1,28 +1,6 @@
 import ApiService from './ApiService';
 
 class BookingService {
-  async getBookings() {
-    try {
-      const response = await api.get('/bookings');
-      // Конвертируем snake_case в camelCase
-      return response.data.map(booking => ({
-        id: booking.id,
-        mentorId: booking.mentor_id,
-        mentorName: booking.mentor?.name,
-        sessionDate: booking.session_date,
-        durationMinutes: booking.duration_minutes,
-        price: booking.price,
-        status: booking.status,
-        notes: booking.notes,
-        createdAt: booking.created_at,
-        sessionType: booking.session_type
-      }));
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-      throw error;
-    }
-  }
-  
   // Получение всех бронирований пользователя
   static async getBookings() {
     try {
@@ -31,7 +9,22 @@ class BookingService {
         method: 'GET'
       });
       console.log('BookingService: Bookings received:', response);
-      return response;
+      
+      // Конвертируем snake_case в camelCase для фронтенда
+      return response.map(booking => ({
+        id: booking.id,
+        mentorId: booking.mentor_id,
+        userId: booking.user_id,
+        mentorName: booking.mentor?.name || 'Неизвестный ментор',
+        sessionDate: booking.session_date,
+        durationMinutes: booking.duration_minutes,
+        price: booking.price,
+        status: booking.status,
+        notes: booking.notes,
+        createdAt: booking.created_at,
+        updatedAt: booking.updated_at
+      }));
+      
     } catch (error) {
       console.error('BookingService: Error fetching bookings:', error);
       
@@ -48,20 +41,20 @@ class BookingService {
       console.log('BookingService: Creating booking:', bookingData);
       
       // Валидация входных данных
-      if (!bookingData.mentorId) {
+      if (!bookingData.mentor_id) {
         throw new Error('Не указан ID ментора');
       }
       
-      if (!bookingData.sessionDate) {
+      if (!bookingData.session_date) {
         throw new Error('Не указана дата сессии');
       }
       
-      if (!bookingData.durationMinutes || bookingData.durationMinutes <= 0) {
+      if (!bookingData.duration_minutes || bookingData.duration_minutes <= 0) {
         throw new Error('Длительность должна быть больше 0 минут');
       }
       
       // Проверяем формат даты
-      const sessionDate = new Date(bookingData.sessionDate);
+      const sessionDate = new Date(bookingData.session_date);
       if (isNaN(sessionDate.getTime())) {
         throw new Error('Некорректный формат даты');
       }
@@ -72,41 +65,48 @@ class BookingService {
         throw new Error('Дата сессии должна быть в будущем');
       }
       
-      // Форматируем данные для бэкенда
-      const backendData = {
-        mentor_id: Number(bookingData.mentorId),
-        session_date: sessionDate.toISOString(), // ✅ Конвертируем в ISO строку
-        duration_minutes: Number(bookingData.durationMinutes),
-        notes: bookingData.notes || null,
-        session_type: bookingData.sessionType || 'individual' // ✅ Добавляем тип сессии
-      };
-      
-      console.log('BookingService: Sending to backend:', backendData);
+      console.log('BookingService: Sending to backend:', bookingData);
       
       const response = await ApiService.request('/bookings', {
         method: 'POST',
-        body: backendData
+        body: bookingData
       });
       
       console.log('BookingService: Booking created successfully:', response);
       
+      // Конвертируем ответ в camelCase
+      const formattedResponse = {
+        id: response.id,
+        mentorId: response.mentor_id,
+        userId: response.user_id,
+        mentorName: response.mentor?.name || 'Неизвестный ментор',
+        sessionDate: response.session_date,
+        durationMinutes: response.duration_minutes,
+        price: response.price,
+        status: response.status,
+        notes: response.notes,
+        createdAt: response.created_at,
+        updatedAt: response.updated_at
+      };
+      
       // Сохраняем в localStorage как fallback
       try {
-        await this.saveToLocalStorage({
-          ...bookingData,
-          id: response.id || Date.now().toString(),
-          status: 'active',
-          createdAt: new Date().toISOString()
-        });
+        const allBookings = JSON.parse(localStorage.getItem('yogavibe_bookings') || '[]');
+        const user = JSON.parse(localStorage.getItem('yogavibe_user') || '{}');
+        
+        const bookingForStorage = {
+          ...formattedResponse,
+          userId: user.id,
+          mentorName: bookingData.mentorName || 'Неизвестный ментор'
+        };
+        
+        allBookings.push(bookingForStorage);
+        localStorage.setItem('yogavibe_bookings', JSON.stringify(allBookings));
       } catch (storageError) {
         console.warn('BookingService: Could not save to localStorage:', storageError);
       }
       
-      return {
-        ...response,
-        sessionDate: new Date(response.session_date || response.sessionDate),
-        sessionType: response.session_type || response.sessionType || 'individual'
-      };
+      return formattedResponse;
       
     } catch (error) {
       console.error('BookingService: Error creating booking:', error);
@@ -133,16 +133,23 @@ class BookingService {
     try {
       console.log('BookingService: Cancelling booking:', bookingId);
       
-      const response = await ApiService.request(`/bookings/${bookingId}`, {
-        method: 'PUT',
-        body: { status: 'cancelled' }
+      const response = await ApiService.request(`/bookings/${bookingId}/cancel`, {
+        method: 'PUT'
       });
       
       console.log('BookingService: Booking cancelled successfully:', response);
       
       // Обновляем localStorage
       try {
-        await this.updateLocalStorageStatus(bookingId, 'cancelled');
+        const allBookings = JSON.parse(localStorage.getItem('yogavibe_bookings') || '[]');
+        const updatedBookings = allBookings.map(booking => {
+          if (booking.id === bookingId) {
+            return { ...booking, status: 'cancelled' };
+          }
+          return booking;
+        });
+        
+        localStorage.setItem('yogavibe_bookings', JSON.stringify(updatedBookings));
       } catch (storageError) {
         console.warn('BookingService: Could not update localStorage:', storageError);
       }
@@ -157,81 +164,6 @@ class BookingService {
       enhancedError.originalError = error;
       
       throw enhancedError;
-    }
-  }
-
-  // Отметить бронирование как завершенное
-  static async completeBooking(bookingId) {
-    try {
-      console.log('BookingService: Completing booking:', bookingId);
-      
-      const response = await ApiService.request(`/bookings/${bookingId}`, {
-        method: 'PUT',
-        body: { status: 'completed' }
-      });
-      
-      console.log('BookingService: Booking completed successfully:', response);
-      
-      // Обновляем localStorage
-      try {
-        await this.updateLocalStorageStatus(bookingId, 'completed');
-      } catch (storageError) {
-        console.warn('BookingService: Could not update localStorage:', storageError);
-      }
-      
-      return response;
-    } catch (error) {
-      console.error('BookingService: Error completing booking:', error);
-      
-      const enhancedError = new Error(
-        error.body?.detail || error.message || 'Не удалось завершить запись'
-      );
-      enhancedError.originalError = error;
-      
-      throw enhancedError;
-    }
-  }
-
-  // Вспомогательные методы для localStorage
-
-  static async saveToLocalStorage(bookingData) {
-    try {
-      const allBookings = JSON.parse(localStorage.getItem('yogavibe_bookings') || '[]');
-      const user = JSON.parse(localStorage.getItem('yogavibe_user') || '{}');
-      
-      const bookingWithUser = {
-        ...bookingData,
-        userId: user.id,
-        mentorName: bookingData.mentorName || 'Неизвестный ментор',
-        price: bookingData.price || 0
-      };
-      
-      allBookings.push(bookingWithUser);
-      localStorage.setItem('yogavibe_bookings', JSON.stringify(allBookings));
-      
-      return true;
-    } catch (error) {
-      console.error('BookingService: Error saving to localStorage:', error);
-      throw error;
-    }
-  }
-
-  static async updateLocalStorageStatus(bookingId, status) {
-    try {
-      const allBookings = JSON.parse(localStorage.getItem('yogavibe_bookings') || '[]');
-      const updatedBookings = allBookings.map(booking => {
-        if (booking.id === bookingId) {
-          return { ...booking, status: status };
-        }
-        return booking;
-      });
-      
-      localStorage.setItem('yogavibe_bookings', JSON.stringify(updatedBookings));
-      
-      return true;
-    } catch (error) {
-      console.error('BookingService: Error updating localStorage:', error);
-      throw error;
     }
   }
 

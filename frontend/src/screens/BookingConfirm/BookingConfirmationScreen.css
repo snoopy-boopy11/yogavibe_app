@@ -160,10 +160,7 @@
   justify-content: center;
 }
 
-.action-btn.primary {
-  background: #69505c;
-  color: white;
-  border: 2px solid #69505c;
+.action-btn {
   padding: 0.75rem 2rem;
   border-radius: 0.75rem;
   font-family: 'Montserrat', sans-serif;
@@ -172,31 +169,85 @@
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 150px;
+  text-decoration: none;
+  border: none;
+}
+
+.action-btn.primary {
+  background: #69505c;
+  color: white;
+  border: 2px solid #69505c;
 }
 
 .action-btn.primary:hover {
   background: #35252c;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(105, 80, 92, 0.3);
 }
 
 .action-btn.secondary {
   background: transparent;
   color: #69505c;
   border: 2px solid #69505c;
-  padding: 0.75rem 2rem;
-  border-radius: 0.75rem;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 150px;
 }
 
 .action-btn.secondary:hover {
   background: #69505c;
   color: white;
   transform: translateY(-2px);
+}
+
+.action-btn:focus {
+  outline: 2px solid #69505c;
+  outline-offset: 2px;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Состояния загрузки и ошибок */
+.confirmation-loading,
+.confirmation-not-found {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: rgba(228, 216, 210, 0.9);
+  text-align: center;
+  padding: 2rem;
+}
+
+.confirmation-not-found h2 {
+  font-family: 'Source Serif Pro', serif;
+  font-weight: 900;
+  color: #69505c;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.confirmation-not-found p {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  color: #35252c;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(105, 80, 92, 0.3);
+  border-radius: 50%;
+  border-top-color: #69505c;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Адаптивность */
@@ -222,8 +273,7 @@
     gap: 0.75rem;
   }
   
-  .action-btn.primary,
-  .action-btn.secondary {
+  .action-btn {
     width: 100%;
   }
 }
@@ -231,5 +281,29 @@
 @media (max-width: 480px) {
   .confirmation-header h1 {
     font-size: 1.5rem;
+  }
+  
+  .confirmation-subtitle {
+    font-size: 1rem;
+  }
+  
+  .success-icon-large {
+    width: 80px;
+    height: 80px;
+    font-size: 4rem;
+  }
+  
+  .booking-summary,
+  .contact-info {
+    padding: 1rem;
+  }
+  
+  .summary-label {
+    font-size: 0.85rem;
+  }
+  
+  .summary-value {
+    font-size: 0.9rem;
+    padding: 0.4rem;
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import BookingService from '../../services/BookingService';
+import ApiService from '../../services/ApiService';
 import './BookingScreen.css';
 
 const BookingScreen = () => {
@@ -57,31 +58,29 @@ const BookingScreen = () => {
 
   const loadMentorData = async () => {
     try {
-      const mockMentors = [
-        { 
-          id: 1, 
-          name: "Анна Иванова", 
-          price: 2500,
-          city: "Москва",
-          yogaStyle: "Хатха",
-          availability: ["Пн-Пт: 9:00-18:00", "Сб: 10:00-15:00"]
-        },
-        { 
-          id: 2, 
-          name: "Дмитрий Петров", 
-          price: 3000,
-          city: "Санкт-Петербург",
-          yogaStyle: "Аштанга",
-          availability: ["Вт-Чт: 10:00-20:00", "Сб-Вс: 9:00-14:00"]
-        },
-      ];
+      console.log(`Loading mentor ${mentorId} from API...`);
+      const response = await ApiService.request(`/mentors/${mentorId}`, {
+        method: 'GET'
+      });
       
-      const foundMentor = mockMentors.find(m => m.id === parseInt(mentorId, 10));
-      if (!foundMentor) {
-        throw new Error('Ментор не найден');
-      }
-      setMentor(foundMentor);
+      const formattedMentor = {
+        id: response.id,
+        name: response.name,
+        description: response.description,
+        gender: response.gender,
+        city: response.city,
+        price: response.price,
+        yogaStyle: response.yoga_style,
+        rating: response.rating,
+        experienceYears: response.experience_years,
+        photoUrl: response.photo_url,
+        isAvailable: response.is_available,
+        availability: ["Пн-Пт: 9:00-18:00", "Сб: 10:00-15:00"]
+      };
+      
+      setMentor(formattedMentor);
     } catch (error) {
+      console.error('Error loading mentor from API:', error);
       throw error;
     }
   };
@@ -156,14 +155,15 @@ const BookingScreen = () => {
       }
 
       const bookingToCreate = {
-        mentorId: parseInt(mentorId, 10),
-        sessionDate: sessionDateTime.toISOString(),
-        durationMinutes: parseInt(bookingData.durationMinutes, 10),
+        mentor_id: parseInt(mentorId, 10),
+        session_date: sessionDateTime.toISOString(),
+        duration_minutes: parseInt(bookingData.durationMinutes, 10),
         notes: bookingData.notes,
-        sessionType: bookingData.sessionType,
-        status: 'active'
+        session_type: bookingData.sessionType
       };
 
+      console.log('Creating booking with data:', bookingToCreate);
+      
       const createdBooking = await BookingService.createBooking(bookingToCreate);
       
       navigate('/booking-confirmation', { 
@@ -175,7 +175,7 @@ const BookingScreen = () => {
       
     } catch (error) {
       console.error('Error creating booking:', error);
-      const errorMessage = error.body?.detail || error.message || 'Ошибка при создании записи';
+      const errorMessage = error.userMessage || error.message || 'Ошибка при создании записи';
       setError(errorMessage);
       alert(`Не удалось создать запись: ${errorMessage}`);
     } finally {
