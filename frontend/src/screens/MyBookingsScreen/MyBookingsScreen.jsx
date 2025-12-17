@@ -1,8 +1,142 @@
 // src/screens/MyBookingsScreen/MyBookingsScreen.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import BookingService from '../../services/BookingService';
 import './MyBookingScreen.css';
+
+const BookingCard = ({ 
+  booking, 
+  now, 
+  onCancel, 
+  onViewMentor 
+}) => {
+  const statusLabels = {
+    'active': { text: 'Активная', className: 'status-active' },
+    'completed': { text: 'Завершена', className: 'status-completed' },
+    'cancelled': { text: 'Отменена', className: 'status-cancelled' }
+  };
+  
+  // Определяем фактический статус для отображения
+  let displayStatus = booking.status;
+  if (booking.status === 'active' && booking.sessionDate <= now) {
+    displayStatus = 'completed';
+  }
+  
+  const statusInfo = statusLabels[displayStatus] || 
+    { text: booking.status, className: 'status-default' };
+  
+  // Можно отменять только активные записи в будущем
+  const canCancel = booking.status === 'active' && booking.sessionDate > now;
+  
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('ru-RU', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+  
+  return (
+    <div className="booking-card">
+      <div className="booking-header">
+        <div className="booking-mentor-info">
+          <h3>{booking.mentorName}</h3>
+          <span className={`status-badge ${statusInfo.className}`}>
+            {statusInfo.text}
+          </span>
+        </div>
+        <div className="booking-id">
+          Запись #{booking.id}
+        </div>
+      </div>
+      
+      <div className="booking-details">
+        <div className="detail-row">
+          <span className="detail-label">Дата:</span>
+          <span className="detail-value">
+            {booking.sessionDate.toLocaleDateString('ru-RU', {
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
+          </span>
+        </div>
+        <div className="detail-row">
+          <span className="detail-label">Время:</span>
+          <span className="detail-value">{formatTime(booking.sessionDate)}</span>
+        </div>
+        <div className="detail-row">
+          <span className="detail-label">Длительность:</span>
+          <span className="detail-value">{booking.durationMinutes} минут</span>
+        </div>
+        <div className="detail-row">
+          <span className="detail-label">Тип сессии:</span>
+          <span className="detail-value">
+            {booking.sessionType === 'individual' ? 'Индивидуальная' : 'Групповая'}
+          </span>
+        </div>
+        <div className="detail-row">
+          <span className="detail-label">Стоимость:</span>
+          <span className="detail-value price">{booking.price} ₽</span>
+        </div>
+        {booking.notes && (
+          <div className="detail-row">
+            <span className="detail-label">Заметки:</span>
+            <span className="detail-value notes">{booking.notes}</span>
+          </div>
+        )}
+      </div>
+      
+      <div className="booking-actions">
+        <button 
+          onClick={() => onViewMentor(booking.mentorId)}
+          className="action-btn view-mentor-btn"
+        >
+          Профиль ментора
+        </button>
+        
+        {canCancel && (
+          <button 
+            onClick={() => onCancel(booking.id)}
+            className="action-btn cancel-btn"
+          >
+            Отменить запись
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+BookingCard.propTypes = {
+  booking: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    mentorId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    mentorName: PropTypes.string.isRequired,
+    sessionDate: PropTypes.instanceOf(Date).isRequired,
+    durationMinutes: PropTypes.number.isRequired,
+    price: PropTypes.number.isRequired,
+    status: PropTypes.oneOf(['active', 'completed', 'cancelled']).isRequired,
+    notes: PropTypes.string,
+    sessionType: PropTypes.oneOf(['individual', 'group'])
+  }).isRequired,
+  now: PropTypes.instanceOf(Date).isRequired,
+  onCancel: PropTypes.func.isRequired,
+  onViewMentor: PropTypes.func.isRequired
+};
+
+const StatsCard = ({ value, label }) => (
+  <div className="stat-card">
+    <div className="stat-value">{value}</div>
+    <div className="stat-label">{label}</div>
+  </div>
+);
+
+StatsCard.propTypes = {
+  value: PropTypes.number.isRequired,
+  label: PropTypes.string.isRequired
+};
 
 const MyBookingsScreen = () => {
   const navigate = useNavigate();
@@ -14,6 +148,36 @@ const MyBookingsScreen = () => {
   useEffect(() => {
     loadBookings();
   }, []);
+
+  // Эффект для обновления прошедших бронирований
+  useEffect(() => {
+    const updatePastBookings = async () => {
+      if (bookings.length === 0) return;
+      
+      const now = new Date();
+      const pastActive = bookings.filter(booking => 
+        booking.status === 'active' && booking.sessionDate <= now
+      );
+      
+      if (pastActive.length === 0) return;
+      
+      // Обновляем каждый прошедший booking
+      for (const booking of pastActive) {
+        try {
+          await BookingService.completeBooking(booking.id);
+          
+          // Обновляем состояние без мутации
+          setBookings(prev => prev.map(b => 
+            b.id === booking.id ? { ...b, status: 'completed' } : b
+          ));
+        } catch (error) {
+          console.error('Error auto-completing booking:', error);
+        }
+      }
+    };
+    
+    updatePastBookings();
+  }, [bookings]);
 
   const loadBookings = async () => {
     setLoading(true);
@@ -48,7 +212,13 @@ const MyBookingsScreen = () => {
         
         if (user.id) {
           const userBookings = allBookings.filter(b => b.userId === user.id);
-          setBookings(userBookings);
+          // Конвертируем строки дат в Date объекты
+          const formattedUserBookings = userBookings.map(booking => ({
+            ...booking,
+            sessionDate: new Date(booking.sessionDate),
+            createdAt: new Date(booking.createdAt || booking.created_at)
+          }));
+          setBookings(formattedUserBookings);
         }
       } catch (localError) {
         console.error('Error loading local bookings:', localError);
@@ -58,7 +228,7 @@ const MyBookingsScreen = () => {
     }
   };
 
-  const { filteredBookings, counts } = useMemo(() => {
+  const { filteredBookings, counts, now } = useMemo(() => {
     const now = new Date();
     
     // Активные: статус active И дата в будущем
@@ -74,23 +244,6 @@ const MyBookingsScreen = () => {
     
     // Отмененные: только статус cancelled
     const cancelled = bookings.filter(booking => booking.status === 'cancelled');
-    
-    // Обновляем статусы прошедших записей (только для активных)
-    const pastActive = bookings.filter(booking => 
-      booking.status === 'active' && booking.sessionDate <= now
-    );
-    
-    if (pastActive.length > 0) {
-      // Обновляем статус на сервере, но не блокируем интерфейс
-      pastActive.forEach(booking => {
-        BookingService.completeBooking(booking.id).catch(console.error);
-      });
-      
-      // Локально обновляем статусы
-      pastActive.forEach(booking => {
-        booking.status = 'completed';
-      });
-    }
     
     // Определяем какие записи показывать на текущей вкладке
     let filtered;
@@ -115,7 +268,8 @@ const MyBookingsScreen = () => {
         completed: completed.length,
         cancelled: cancelled.length,
         total: bookings.length
-      }
+      },
+      now
     };
   }, [bookings, activeTab]);
 
@@ -123,7 +277,7 @@ const MyBookingsScreen = () => {
     navigate('/main', { state: { activeNav: 'МЕНТОРЫ' } });
   };
 
-  const handleCancelBooking = async (bookingId) => {
+  const handleCancelBooking = useCallback(async (bookingId) => {
     if (window.confirm('Вы уверены, что хотите отменить эту запись?')) {
       try {
         setError(null);
@@ -158,118 +312,11 @@ const MyBookingsScreen = () => {
         alert('Не удалось отменить запись');
       }
     }
-  };
+  }, []);
 
-  const handleViewMentor = (mentorId) => {
+  const handleViewMentor = useCallback((mentorId) => {
     navigate(`/mentor/${mentorId}`);
-  };
-
-  const BookingCard = ({ booking }) => {
-    const statusLabels = {
-      'active': { text: 'Активная', className: 'status-active' },
-      'completed': { text: 'Завершена', className: 'status-completed' },
-      'cancelled': { text: 'Отменена', className: 'status-cancelled' }
-    };
-    
-    // Определяем фактический статус для отображения
-    let displayStatus = booking.status;
-    const now = new Date();
-    if (booking.status === 'active' && booking.sessionDate <= now) {
-      displayStatus = 'completed';
-    }
-    
-    const statusInfo = statusLabels[displayStatus] || 
-      { text: booking.status, className: 'status-default' };
-    
-    // Можно отменять только активные записи в будущем
-    const canCancel = booking.status === 'active' && booking.sessionDate > new Date();
-    
-    const formatTime = (date) => {
-      return date.toLocaleTimeString('ru-RU', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-    };
-    
-    return (
-      <div className="booking-card">
-        <div className="booking-header">
-          <div className="booking-mentor-info">
-            <h3>{booking.mentorName}</h3>
-            <span className={`status-badge ${statusInfo.className}`}>
-              {statusInfo.text}
-            </span>
-          </div>
-          <div className="booking-id">
-            Запись #{booking.id}
-          </div>
-        </div>
-        
-        <div className="booking-details">
-          <div className="detail-row">
-            <span className="detail-label">Дата:</span>
-            <span className="detail-value">
-              {booking.sessionDate.toLocaleDateString('ru-RU', {
-                weekday: 'short',
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              })}
-            </span>
-          </div>
-          <div className="detail-row">
-            <span className="detail-label">Время:</span>
-            <span className="detail-value">{formatTime(booking.sessionDate)}</span>
-          </div>
-          <div className="detail-row">
-            <span className="detail-label">Длительность:</span>
-            <span className="detail-value">{booking.durationMinutes} минут</span>
-          </div>
-          <div className="detail-row">
-            <span className="detail-label">Тип сессии:</span>
-            <span className="detail-value">
-              {booking.sessionType === 'individual' ? 'Индивидуальная' : 'Групповая'}
-            </span>
-          </div>
-          <div className="detail-row">
-            <span className="detail-label">Стоимость:</span>
-            <span className="detail-value price">{booking.price} ₽</span>
-          </div>
-          {booking.notes && (
-            <div className="detail-row">
-              <span className="detail-label">Заметки:</span>
-              <span className="detail-value notes">{booking.notes}</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="booking-actions">
-          <button 
-            onClick={() => handleViewMentor(booking.mentorId)}
-            className="action-btn view-mentor-btn"
-          >
-            Профиль ментора
-          </button>
-          
-          {canCancel && (
-            <button 
-              onClick={() => handleCancelBooking(booking.id)}
-              className="action-btn cancel-btn"
-            >
-              Отменить запись
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const StatsCard = ({ value, label }) => (
-    <div className="stat-card">
-      <div className="stat-value">{value}</div>
-      <div className="stat-label">{label}</div>
-    </div>
-  );
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -348,7 +395,13 @@ const MyBookingsScreen = () => {
             </div>
           ) : (
             filteredBookings.map(booking => (
-              <BookingCard key={booking.id} booking={booking} />
+              <BookingCard 
+                key={booking.id} 
+                booking={booking}
+                now={now}
+                onCancel={handleCancelBooking}
+                onViewMentor={handleViewMentor}
+              />
             ))
           )}
         </div>

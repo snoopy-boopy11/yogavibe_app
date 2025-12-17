@@ -79,6 +79,11 @@
   color: white;
 }
 
+.tab-btn:focus {
+  outline: 2px solid #69505c;
+  outline-offset: 2px;
+}
+
 .tab-count {
   background: rgba(255, 255, 255, 0.2);
   padding: 0.125rem 0.5rem;
@@ -243,6 +248,11 @@
   background: #35252c;
 }
 
+.view-mentor-btn:focus {
+  outline: 2px solid #35252c;
+  outline-offset: 2px;
+}
+
 .cancel-btn {
   background: transparent;
   color: #F44336;
@@ -251,6 +261,11 @@
 
 .cancel-btn:hover {
   background: rgba(244, 67, 54, 0.1);
+}
+
+.cancel-btn:focus {
+  outline: 2px solid #F44336;
+  outline-offset: 2px;
 }
 
 /* Статистика */
@@ -336,6 +351,11 @@
   transform: translateY(-2px);
 }
 
+.find-mentor-btn:focus {
+  outline: 2px solid #35252c;
+  outline-offset: 2px;
+}
+
 /* Загрузка */
 .bookings-loading {
   display: flex;
@@ -353,6 +373,34 @@
   color: #69505c;
   font-size: 1.2rem;
   margin-top: 1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(105, 80, 92, 0.2);
+  border-top-color: #69505c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Ошибка */
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #f5c6cb;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Адаптивность */
