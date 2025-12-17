@@ -63,6 +63,99 @@ def get_database_stats():
         db.close()
 
 
+# Создание моковых данных менторов
+def create_mock_mentors(db: Session):    
+    mock_mentors = [
+        {
+            "name": "Анна Иванова",
+            "description": "Опытный инструктор по хатха йоге с 5-летним стажем",
+            "gender": "female",
+            "city": "Москва",
+            "price": 2500,
+            "yoga_style": "Хатха",
+            "rating": 4.8,
+            "experience_years": 5,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Дмитрий Петров",
+            "description": "Специалист по аштанга йоге и медитации",
+            "gender": "male",
+            "city": "Санкт-Петербург",
+            "price": 3000,
+            "yoga_style": "Аштанга",
+            "rating": 4.9,
+            "experience_years": 7,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Мария Сидорова",
+            "description": "Йога для беременных и восстановительная йога",
+            "gender": "female",
+            "city": "Новосибирск",
+            "price": 2000,
+            "yoga_style": "Восстановительная",
+            "rating": 4.7,
+            "experience_years": 6,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Алексей Козлов",
+            "description": "Инструктор по силовой йоге и йоге для мужчин",
+            "gender": "male",
+            "city": "Екатеринбург",
+            "price": 2800,
+            "yoga_style": "Силовая",
+            "rating": 4.6,
+            "experience_years": 4,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Елена Смирнова",
+            "description": "Кундалини йога и работа с чакрами",
+            "gender": "female",
+            "city": "Москва",
+            "price": 3200,
+            "yoga_style": "Кундалини",
+            "rating": 4.8,
+            "experience_years": 8,
+            "photo_url": None,
+            "is_available": True
+        },
+        {
+            "name": "Сергей Николаев",
+            "description": "Йогатерапия и работа с травмами",
+            "gender": "male",
+            "city": "Казань",
+            "price": 2700,
+            "yoga_style": "Йогатерапия",
+            "rating": 4.5,
+            "experience_years": 6,
+            "photo_url": None,
+            "is_available": True
+        }
+    ]
+    
+    existing_count = db.query(models.Mentor).count()
+    
+    if existing_count == 0:
+        logger.info("Создание моковых данных менторов...")
+        
+        for mentor_data in mock_mentors:
+            mentor = models.Mentor(**mentor_data)
+            db.add(mentor)
+        
+        db.commit()
+        logger.info(f"Создано {len(mock_mentors)} моковых менторов")
+        return len(mock_mentors)
+    else:
+        logger.info(f"В базе уже есть {existing_count} менторов, пропускаем создание моковых данных")
+        return 0
+
 
 def init_db():
     logger.info("Проверка базы данных...")
@@ -72,6 +165,12 @@ def init_db():
     
     if created:
         logger.info("База данных инициализирована")
+        # Создаем моковых менторов
+        db = SessionLocal()
+        try:
+            create_mock_mentors(db)
+        finally:
+            db.close()
     else:
         # Показываем статистику существующей БД
         stats = get_database_stats()
