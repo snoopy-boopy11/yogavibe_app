@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import BookingService from '../../services/BookingService';
 import './BookingScreen.css';
@@ -21,17 +21,41 @@ const BookingScreen = () => {
     sessionType: 'individual'
   });
 
-  useEffect(() => {
-    if (location.state?.mentor) {
-      setMentor(location.state.mentor);
-      setLoading(false);
-    } else {
-      loadMentorData();
+  // Генерация временных слотов
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    for (let hour = 9; hour <= 20; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(time);
+      }
     }
-  }, [mentorId, location.state]);
+    return slots;
+  }, []);
+
+  useEffect(() => {
+    const fetchMentor = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        if (location.state?.mentor) {
+          setMentor(location.state.mentor);
+        } else {
+          await loadMentorData();
+        }
+      } catch (error) {
+        console.error('Error loading mentor:', error);
+        setError('Не удалось загрузить данные ментора');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchMentor();
+  }, [mentorId, location.state?.mentor]);
 
   const loadMentorData = async () => {
-    setLoading(true);
     try {
       const mockMentors = [
         { 
@@ -52,23 +76,43 @@ const BookingScreen = () => {
         },
       ];
       
-      const foundMentor = mockMentors.find(m => m.id === parseInt(mentorId));
+      const foundMentor = mockMentors.find(m => m.id === parseInt(mentorId, 10));
+      if (!foundMentor) {
+        throw new Error('Ментор не найден');
+      }
       setMentor(foundMentor);
     } catch (error) {
-      console.error('Error loading mentor:', error);
-      setError('Не удалось загрузить данные ментора');
-    } finally {
-      setLoading(false);
+      throw error;
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setBookingData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
+
+  const isTimeAvailable = useCallback((selectedTime) => {
+    if (!mentor?.availability) return true;
+    
+    // Базовая проверка (9:00-18:00 по умолчанию)
+    const [hours, minutes] = selectedTime.split(':').map(Number);
+    const selectedHour = hours + minutes / 60;
+    
+    return selectedHour >= 9 && selectedHour <= 18;
+  }, [mentor]);
+
+  const calculateTotalPrice = useCallback(() => {
+    if (!mentor) return 0;
+    
+    const basePrice = mentor.price || 0;
+    const durationMultiplier = parseInt(bookingData.durationMinutes, 10) / 60;
+    const typeMultiplier = bookingData.sessionType === 'group' ? 0.7 : 1;
+    
+    return Math.round(basePrice * durationMultiplier * typeMultiplier);
+  }, [mentor, bookingData.durationMinutes, bookingData.sessionType]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,17 +122,43 @@ const BookingScreen = () => {
       return;
     }
 
-    const dateTimeString = `${bookingData.sessionDate}T${bookingData.time}:00`;
-    const sessionDate = new Date(dateTimeString);
+    // Валидация даты
+    const selectedDate = new Date(bookingData.sessionDate);
+    const now = new Date();
+    selectedDate.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < now) {
+      alert('Дата не может быть в прошлом');
+      return;
+    }
+
+    // Проверка доступности времени
+    if (!isTimeAvailable(bookingData.time)) {
+      alert('Выбранное время недоступно. Пожалуйста, выберите время с 9:00 до 18:00');
+      return;
+    }
 
     setIsBooking(true);
     setError(null);
 
     try {
+      // Формируем корректную дату и время
+      const [hours, minutes] = bookingData.time.split(':').map(Number);
+      const sessionDateTime = new Date(bookingData.sessionDate);
+      sessionDateTime.setHours(hours, minutes, 0, 0);
+      
+      // Проверяем, что выбранное время в будущем
+      if (sessionDateTime <= new Date()) {
+        alert('Выбранное время уже прошло');
+        setIsBooking(false);
+        return;
+      }
+
       const bookingToCreate = {
-        mentorId: parseInt(mentorId),
-        sessionDate: sessionDate.toISOString(),
-        durationMinutes: parseInt(bookingData.durationMinutes),
+        mentorId: parseInt(mentorId, 10),
+        sessionDate: sessionDateTime.toISOString(),
+        durationMinutes: parseInt(bookingData.durationMinutes, 10),
         notes: bookingData.notes,
         sessionType: bookingData.sessionType,
         status: 'active'
@@ -105,54 +175,47 @@ const BookingScreen = () => {
       
     } catch (error) {
       console.error('Error creating booking:', error);
-      setError(error.body?.detail || error.message || 'Ошибка при создании записи');
-      alert('Не удалось создать запись. Пожалуйста, попробуйте снова.');
+      const errorMessage = error.body?.detail || error.message || 'Ошибка при создании записи';
+      setError(errorMessage);
+      alert(`Не удалось создать запись: ${errorMessage}`);
     } finally {
       setIsBooking(false);
     }
   };
 
-  const calculateTotalPrice = () => {
-    if (!mentor) return 0;
-    
-    const basePrice = mentor.price || 0;
-    const durationMultiplier = parseInt(bookingData.durationMinutes) / 60;
-    const typeMultiplier = bookingData.sessionType === 'group' ? 0.7 : 1;
-    
-    return Math.round(basePrice * durationMultiplier * typeMultiplier);
-  };
-
-  const handleBackClick = () => {
+  const handleBackClick = useCallback(() => {
     navigate(`/mentor/${mentorId}`);
-  };
+  }, [navigate, mentorId]);
 
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 9; hour <= 20; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(time);
-      }
-    }
-    return slots;
-  };
+  // Получение минимальной даты для input[type="date"]
+  const minDate = useMemo(() => {
+    return new Date().toISOString().split('T')[0];
+  }, []);
 
   if (loading) {
     return (
-      <div className="booking-loading">
-        <div className="loading-spinner"></div>
-        <p>Загрузка...</p>
+      <div className="booking-page">
+        <div className="booking-container">
+          <div className="booking-loading">
+            <div className="loading-spinner"></div>
+            <p>Загрузка...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!mentor) {
     return (
-      <div className="booking-not-found">
-        <h2>Ментор не найден</h2>
-        <button onClick={() => navigate('/main')} className="back-btn">
-          Вернуться к списку менторов
-        </button>
+      <div className="booking-page">
+        <div className="booking-container">
+          <div className="booking-not-found">
+            <h2>Ментор не найден</h2>
+            <button onClick={() => navigate('/main')} className="back-btn">
+              Вернуться к списку менторов
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -165,6 +228,7 @@ const BookingScreen = () => {
             onClick={handleBackClick}
             className="back-btn"
             aria-label="Вернуться к профилю ментора"
+            disabled={isBooking}
           >
             ← Назад
           </button>
@@ -172,7 +236,7 @@ const BookingScreen = () => {
         </div>
 
         {error && (
-          <div className="error-message">
+          <div className="error-message" role="alert">
             ⚠️ {error}
           </div>
         )}
@@ -195,7 +259,7 @@ const BookingScreen = () => {
           </div>
         </div>
 
-        <form className="booking-form" onSubmit={handleSubmit}>
+        <form className="booking-form" onSubmit={handleSubmit} noValidate>
           <div className="form-section">
             <h3>Выберите дату и время</h3>
             <div className="form-row">
@@ -207,8 +271,9 @@ const BookingScreen = () => {
                   name="sessionDate"
                   value={bookingData.sessionDate}
                   onChange={handleInputChange}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={minDate}
                   required
+                  disabled={isBooking}
                 />
               </div>
               
@@ -220,9 +285,10 @@ const BookingScreen = () => {
                   value={bookingData.time}
                   onChange={handleInputChange}
                   required
+                  disabled={isBooking}
                 >
                   <option value="">Выберите время</option>
-                  {generateTimeSlots().map(time => (
+                  {timeSlots.map(time => (
                     <option key={time} value={time}>{time}</option>
                   ))}
                 </select>
@@ -237,6 +303,7 @@ const BookingScreen = () => {
                   name="durationMinutes"
                   value={bookingData.durationMinutes}
                   onChange={handleInputChange}
+                  disabled={isBooking}
                 >
                   <option value="30">30 минут</option>
                   <option value="60">60 минут</option>
@@ -252,6 +319,7 @@ const BookingScreen = () => {
                   name="sessionType"
                   value={bookingData.sessionType}
                   onChange={handleInputChange}
+                  disabled={isBooking}
                 >
                   <option value="individual">Индивидуальная</option>
                   <option value="group">Групповая</option>
@@ -271,6 +339,7 @@ const BookingScreen = () => {
                 onChange={handleInputChange}
                 placeholder="Опишите, что вы хотели бы проработать, есть ли особенности здоровья или другие пожелания..."
                 rows="4"
+                disabled={isBooking}
               />
             </div>
           </div>
@@ -309,6 +378,7 @@ const BookingScreen = () => {
               type="submit"
               className="submit-btn"
               disabled={isBooking || !bookingData.sessionDate || !bookingData.time}
+              aria-busy={isBooking}
             >
               {isBooking ? 'ОФОРМЛЕНИЕ...' : 'ПОДТВЕРДИТЬ ЗАПИСЬ'}
             </button>
