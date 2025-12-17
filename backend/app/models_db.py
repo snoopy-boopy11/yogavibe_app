@@ -8,7 +8,7 @@ from database import Base
 # МОДЕЛИ БАЗЫ ДАННЫХ 
 
 class User(Base):
-    """Модель пользователя"""
+    # Модель пользователя
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -33,7 +33,7 @@ class User(Base):
 
 
 class Mentor(Base):
-    """Модель инструктора йоги"""
+    # Модель инструктора йоги
     __tablename__ = "mentors"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -58,7 +58,7 @@ class Mentor(Base):
 
 
 class Note(Base):
-    """Модель заметки пользователя"""
+    # Модель заметки пользователя
     __tablename__ = "notes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -74,7 +74,7 @@ class Note(Base):
 
 
 class Booking(Base):
-    """Модель бронирования сессии"""
+    # Модель бронирования сессии
     __tablename__ = "bookings"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -98,7 +98,7 @@ class Booking(Base):
 
 
 class RefreshToken(Base):
-    """Модель refresh токенов"""
+    # Модель refresh токенов
     __tablename__ = "refresh_tokens"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)

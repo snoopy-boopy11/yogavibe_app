@@ -3,9 +3,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
-dotenv_path = Path(__file__).parent.parent / ".env"
-if dotenv_path.exists():
-    load_dotenv(dotenv_path=dotenv_path)
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 class Settings(BaseSettings):
     # Настройки JWT
@@ -15,7 +14,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     TIMEZONE: str = "Europe/Moscow"
 
-    DATABASE_URL: str = "sqlite:///../data/yogavibe.db"
+    DATABASE_URL: str = "sqlite:///./data/yogavibe.db"
     DEBUG: bool = True
 
     @property

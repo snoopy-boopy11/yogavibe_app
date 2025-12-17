@@ -6,9 +6,8 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import os
 from config import settings
 
-PROJECT_ROOT = Path(__file__).parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
-DATA_DIR.mkdir(exist_ok=True)
+
+os.makedirs("data", exist_ok=True)
 
 # Подключение к SQLite базе данных
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
