@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './MentorProfileScreen.css';
 
-// Выносим моковые данные в константы (можно вынести в отдельный файл)
+// Выносим моковые данные в константы
 const MOCK_MENTORS = [
   { 
     id: 1, 
@@ -214,7 +214,7 @@ const MentorProfileScreen = () => {
               <div className="mentor-basic-info">
                 <h2 className="mentor-name">{mentor.name}</h2>
                 <div className="mentor-rating">
-                  <span className="rating-stars">★★★★★</span>
+                  <span className="rating-stars">★</span>
                   <span className="rating-value">{mentor.rating}</span>
                   <span className="reviews-count">({mentor.reviewsCount} отзывов)</span>
                 </div>
