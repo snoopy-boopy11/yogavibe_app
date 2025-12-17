@@ -33,6 +33,7 @@ const RegisterScreen = ({ onRegister }) => {
       [name]: value
     }));
     
+    // Очищаем ошибку для конкретного поля при вводе
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -44,6 +45,7 @@ const RegisterScreen = ({ onRegister }) => {
   const validateForm = () => {
     const newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
 
     // Проверка username
     if (!formData.username.trim()) {
@@ -52,7 +54,7 @@ const RegisterScreen = ({ onRegister }) => {
       newErrors.username = 'Имя должно быть не менее 3 символов';
     } else if (formData.username.length > 50) {
       newErrors.username = 'Имя должно быть не более 50 символов';
-    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+    } else if (!usernameRegex.test(formData.username)) {
       newErrors.username = 'Имя может содержать только буквы, цифры и подчеркивания';
     }
     
@@ -87,49 +89,35 @@ const RegisterScreen = ({ onRegister }) => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    console.log('RegisterScreen: Form submitted');
     
     if (!validateForm()) {
-      console.log('RegisterScreen: Form validation failed');
       return;
     }
     
-    console.log('RegisterScreen: Form validation passed');
     setLoading(true);
     setErrors({});
 
     try {
-      // Отправляем только те поля, которые ожидает бэкенд
       const userData = {
         username: formData.username.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password
       };
       
-      console.log('RegisterScreen: Sending user data to API:', { 
-        username: userData.username,
-        email: userData.email,
-        password: '***'
-      });
-      
       const result = await onRegister(userData);
-      console.log('RegisterScreen: Registration result:', result);
       
       if (result && result.success) {
-        console.log('RegisterScreen: Registration successful!');
-        console.log('RegisterScreen: Navigating to /main');
         navigate('/main');
       } else {
-        console.log('RegisterScreen: Registration failed');
-        
-        const errorMessage = result?.message || 'Ошибка регистрации';
+        const errorMessage = result?.message || 'Ошибка регистрации. Попробуйте еще раз.';
         setErrors({ general: errorMessage });
       }
     } catch (error) {
       console.error('RegisterScreen: Registration error:', error);
-      setErrors({ general: 'Ошибка при регистрации. Попробуйте еще раз.' });
+      setErrors({ 
+        general: error.message || 'Ошибка при регистрации. Попробуйте еще раз.' 
+      });
     } finally {
-      console.log('RegisterScreen: Setting loading to false');
       setLoading(false);
     }
   };
@@ -151,7 +139,7 @@ const RegisterScreen = ({ onRegister }) => {
           <h3 className="entry">РЕГИСТРАЦИЯ</h3>
           
           <div className="flower-icon">
-            <img src={logo} alt="Цветочек" />
+            <img src={logo} alt="Цветок" loading="lazy" />
           </div>
           
           {errors.general && (
@@ -173,12 +161,14 @@ const RegisterScreen = ({ onRegister }) => {
               required
               minLength="3"
               maxLength="50"
+              pattern="[a-zA-Z0-9_]+"
               title="Только буквы, цифры и подчеркивания"
               aria-label="Имя пользователя (логин)"
               aria-invalid={!!errors.username}
+              aria-describedby={errors.username ? "username-error" : undefined}
             />
             {errors.username && (
-              <span className="field-error" role="alert">
+              <span className="field-error" id="username-error" role="alert">
                 {errors.username}
               </span>
             )}
@@ -197,9 +187,10 @@ const RegisterScreen = ({ onRegister }) => {
               maxLength="100"
               aria-label="Email"
               aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "email-error" : undefined}
             />
             {errors.email && (
-              <span className="field-error" role="alert">
+              <span className="field-error" id="email-error" role="alert">
                 {errors.email}
               </span>
             )}
@@ -219,6 +210,7 @@ const RegisterScreen = ({ onRegister }) => {
               maxLength="100"
               aria-label="Пароль"
               aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
             />
             <button 
               type="button"
@@ -226,6 +218,7 @@ const RegisterScreen = ({ onRegister }) => {
               onClick={togglePasswordVisibility}
               disabled={loading}
               aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+              aria-pressed={showPassword}
             >
               <img
                 src={showPassword ? eyeHide : eyeShow} 
@@ -234,7 +227,7 @@ const RegisterScreen = ({ onRegister }) => {
               />
             </button>
             {errors.password && (
-              <span className="field-error" role="alert">
+              <span className="field-error" id="password-error" role="alert">
                 {errors.password}
               </span>
             )}
@@ -254,6 +247,7 @@ const RegisterScreen = ({ onRegister }) => {
               maxLength="100"
               aria-label="Подтверждение пароля"
               aria-invalid={!!errors.confirmPassword}
+              aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
             />
             <button 
               type="button"
@@ -261,6 +255,7 @@ const RegisterScreen = ({ onRegister }) => {
               onClick={toggleConfirmPasswordVisibility}
               disabled={loading}
               aria-label={showConfirmPassword ? "Скрыть пароль" : "Показать пароль"}
+              aria-pressed={showConfirmPassword}
             >
               <img
                 src={showConfirmPassword ? eyeHide : eyeShow} 
@@ -269,7 +264,7 @@ const RegisterScreen = ({ onRegister }) => {
               />
             </button>
             {errors.confirmPassword && (
-              <span className="field-error" role="alert">
+              <span className="field-error" id="confirm-password-error" role="alert">
                 {errors.confirmPassword}
               </span>
             )}
