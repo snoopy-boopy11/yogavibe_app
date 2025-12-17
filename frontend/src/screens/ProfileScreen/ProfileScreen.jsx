@@ -1,21 +1,50 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import UserService from '../../services/UserService';
 import AuthService from '../../services/AuthService';
 import './ProfileScreen.css';
 
+// Константы для полей профиля
+const BACKEND_FIELDS = ['city', 'yoga_style', 'experience', 'goals'];
+const READONLY_FIELDS = ['username'];
+const TEXTAREA_FIELDS = ['goals', 'healthInfo', 'contactInfo', 'knownStyles', 'communicationStyle', 'mentorPreferences', 'additionalInfo'];
+
+// Метаданные полей для лучшей организации
+const FIELD_CONFIGS = {
+  username: { label: 'Имя пользователя', type: 'readonly', section: 'ОБО МНЕ' },
+  age: { label: 'Возраст', type: 'local', section: 'ОБО МНЕ' },
+  city: { label: 'Город', type: 'backend', section: 'ОБО МНЕ' },
+  contactInfo: { label: 'Контактные данные', type: 'local', section: 'ОБО МНЕ', textarea: true },
+  experience: { label: 'Стаж практики', type: 'backend', section: 'ОПЫТ В ЙОГЕ' },
+  knownStyles: { label: 'Знакомые стили', type: 'local', section: 'ОПЫТ В ЙОГЕ', textarea: true },
+  yoga_style: { label: 'Предпочитаемый стиль', type: 'backend', section: 'ОПЫТ В ЙОГЕ' },
+  goals: { label: 'Основные цели', type: 'backend', section: 'ЦЕЛИ И ЗАПРОСЫ', textarea: true },
+  healthInfo: { label: 'Состояние здоровья', type: 'local', section: 'ЦЕЛИ И ЗАПРОСЫ', textarea: true },
+  preferredFormat: { label: 'Формат занятий', type: 'local', section: 'ФОРМАТ РАБОТЫ' },
+  meetingFrequency: { label: 'Частота встреч', type: 'local', section: 'ФОРМАТ РАБОТЫ' },
+  mentorshipDuration: { label: 'Срок работы', type: 'local', section: 'ФОРМАТ РАБОТЫ' },
+  communicationStyle: { label: 'Стиль общения', type: 'local', section: 'ПРЕДПОЧТЕНИЯ', textarea: true },
+  mentorPreferences: { label: 'Требования к ментору', type: 'local', section: 'ПРЕДПОЧТЕНИЯ', textarea: true },
+  additionalInfo: { label: 'Дополнительная информация', type: 'local', section: 'ДОПОЛНИТЕЛЬНО', textarea: true }
+};
+
+// Максимальный размер файла фото (5MB)
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
 const ProfileScreen = ({ user, onUpdateProfile }) => {
   const fileInputRef = useRef(null);
   
-  // Состояния профиля
+  // Основное состояние профиля
   const [profile, setProfile] = useState({
-    // Бэкендные поля (сохраняются на сервер)
+    // Бэкендные поля
     city: '',
     yoga_style: '',
     experience: '',
     goals: '',
+    username: '',
     
-    // Локальные поля (только в localStorage)
-    username: '', // Будет заполнено из бэкенда, но не редактируемое
+    // Локальные поля
     age: '',
     contactInfo: '',
     knownStyles: '',
@@ -29,6 +58,7 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
     photo: null
   });
 
+  // UI состояния
   const [currentUser, setCurrentUser] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [tempValue, setTempValue] = useState('');
@@ -39,335 +69,322 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [error, setError] = useState(null);
 
-  // Загрузка профиля при монтировании
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
+  // Загрузка профиля
+  const loadProfile = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Получаем ID пользователя
-      const userId = user?.id || (AuthService.getCurrentUser()?.id);
+      const userId = user?.id || AuthService.getCurrentUser()?.id;
       if (!userId) {
         throw new Error('Пользователь не найден');
       }
 
-      // 1. Загружаем данные с сервера
-      console.log('ProfileScreen: Loading profile from server...');
-      const serverProfile = await UserService.getProfile();
-      setCurrentUser(serverProfile);
-      
-      // 2. Загружаем локальные данные
-      const localProfile = UserService.getLocalProfile(userId);
-      
-      // 3. Объединяем данные
+      // Загрузка данных
+      let serverProfile = {};
+      try {
+        serverProfile = await UserService.getProfile();
+      } catch (serverError) {
+        console.warn('Не удалось загрузить профиль с сервера:', serverError);
+      }
+
+      // getLocalProfile - СИНХРОННЫЙ метод
+      let localProfile = {};
+      try {
+        localProfile = UserService.getLocalProfile(userId);
+      } catch (localError) {
+        console.warn('Не удалось загрузить локальный профиль:', localError);
+      }
+
+      setCurrentUser(serverProfile || {});
+
+      // Создаем объединенный профиль
       const mergedProfile = {
-        // Бэкендные поля
-        city: serverProfile.city || '',
-        yoga_style: serverProfile.yoga_style || '',
-        experience: serverProfile.experience || '',
-        goals: serverProfile.goals || '',
-        username: serverProfile.username || '', // Берем username из бэкенда
+        city: serverProfile?.city || '',
+        yoga_style: serverProfile?.yoga_style || '',
+        experience: serverProfile?.experience || '',
+        goals: serverProfile?.goals || '',
+        username: serverProfile?.username || '',
         
-        // Локальные поля
-        age: localProfile.age || '',
-        contactInfo: localProfile.contactInfo || '',
-        knownStyles: localProfile.knownStyles || localProfile.yoga_style || '',
-        healthInfo: localProfile.healthInfo || '',
-        preferredFormat: localProfile.preferredFormat || '',
-        meetingFrequency: localProfile.meetingFrequency || '',
-        mentorshipDuration: localProfile.mentorshipDuration || '',
-        communicationStyle: localProfile.communicationStyle || '',
-        mentorPreferences: localProfile.mentorPreferences || '',
-        additionalInfo: localProfile.additionalInfo || '',
-        photo: localProfile.photo || null
+        age: localProfile?.age || '',
+        contactInfo: localProfile?.contactInfo || '',
+        knownStyles: localProfile?.knownStyles || '',
+        healthInfo: localProfile?.healthInfo || '',
+        preferredFormat: localProfile?.preferredFormat || '',
+        meetingFrequency: localProfile?.meetingFrequency || '',
+        mentorshipDuration: localProfile?.mentorshipDuration || '',
+        communicationStyle: localProfile?.communicationStyle || '',
+        mentorPreferences: localProfile?.mentorPreferences || '',
+        additionalInfo: localProfile?.additionalInfo || '',
+        photo: localProfile?.photo || null
       };
-      
+
       setProfile(mergedProfile);
       
-      // Устанавливаем фото превью
-      if (localProfile.photo) {
+      if (localProfile?.photo) {
         setPhotoPreview(localProfile.photo);
       }
       
-      console.log('ProfileScreen: Profile loaded successfully');
-      
     } catch (error) {
       console.error('ProfileScreen: Error loading profile:', error);
-      setError(error.message || 'Ошибка загрузки профиля');
-      
-      // Fallback: пытаемся загрузить только локальные данные
-      try {
-        const userId = user?.id || (AuthService.getCurrentUser()?.id);
-        if (userId) {
-          const localProfile = UserService.getLocalProfile(userId);
-          setProfile(prev => ({ 
-            ...prev, 
-            ...localProfile,
-            username: user?.username || AuthService.getCurrentUser()?.username || ''
-          }));
-          
-          if (localProfile.photo) {
-            setPhotoPreview(localProfile.photo);
-          }
-        }
-      } catch (localError) {
-        console.error('ProfileScreen: Error loading local profile:', localError);
-      }
+      setError('Ошибка загрузки профиля. Проверьте подключение к интернету.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
-  // Редактирование полей
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  // Обработка редактирования полей
   const startEditing = (fieldName, currentValue) => {
-    // Не разрешаем редактировать username
-    if (fieldName === 'username') {
-      alert('Имя пользователя нельзя изменить');
+    if (READONLY_FIELDS.includes(fieldName)) {
+      alert('Это поле нельзя изменить');
       return;
     }
     setEditingField(fieldName);
-    setTempValue(currentValue);
+    setTempValue(currentValue || '');
   };
 
-  const saveField = async () => {
-    if (editingField && tempValue !== undefined) {
-      const fieldName = editingField;
-      const newValue = tempValue;
+  const saveField = useCallback(async () => {
+    if (!editingField) return;
+
+    const fieldName = editingField;
+    const newValue = tempValue.trim();
+
+    // Обновляем состояние
+    setProfile(prev => ({
+      ...prev,
+      [fieldName]: newValue
+    }));
+
+    setEditingField(null);
+    setTempValue('');
+
+    try {
+      const userId = user?.id || AuthService.getCurrentUser()?.id;
       
-      // Обновляем локальное состояние
-      const updatedProfile = {
-        ...profile,
-        [fieldName]: newValue
-      };
-      setProfile(updatedProfile);
-      
-      setEditingField(null);
-      setTempValue('');
-      
-      // Автосохранение только для бэкендных полей
-      const backendFields = ['city', 'yoga_style', 'experience', 'goals'];
-      if (backendFields.includes(fieldName)) {
-        await saveProfileToBackend(updatedProfile);
-      } else {
-        // Для локальных полей сохраняем сразу
-        await saveLocalProfile(updatedProfile);
+      if (!userId) {
+        throw new Error('Пользователь не найден');
       }
+      
+      if (BACKEND_FIELDS.includes(fieldName)) {
+        // Сохраняем в бэкенд
+        const backendData = { [fieldName]: newValue || null };
+        const updatedUser = await UserService.updateProfile(backendData);
+        if (updatedUser) {
+          setCurrentUser(prev => ({ ...prev, ...backendData }));
+        }
+      } else {
+        // Сохраняем локально (синхронно)
+        UserService.saveLocalProfile(userId, { [fieldName]: newValue });
+      }
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (error) {
+      console.error(`Error saving field ${fieldName}:`, error);
+      setError('Ошибка сохранения. Попробуйте еще раз.');
     }
-  };
+  }, [editingField, tempValue, user]);
 
   const cancelEditing = () => {
     setEditingField(null);
     setTempValue('');
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       saveField();
     } else if (e.key === 'Escape') {
       cancelEditing();
     }
-  };
+  }, [saveField]);
 
-  // Сохранение профиля в бэкенд
-  const saveProfileToBackend = async (profileData) => {
-    setIsSaving(true);
-    setError(null);
-    
-    try {
-      const backendData = {
-        city: profileData.city || null,
-        yoga_style: profileData.yoga_style || null,
-        experience: profileData.experience || null,
-        goals: profileData.goals || null
-      };
-      
-      console.log('ProfileScreen: Saving to backend:', backendData);
-      const updatedUser = await UserService.updateProfile(backendData);
-      
-      // Обновляем текущего пользователя
-      if (updatedUser) {
-        setCurrentUser(updatedUser);
-      }
-      
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-      
-      // Вызываем callback из MainScreen если он есть
-      if (onUpdateProfile && currentUser?.id) {
-        onUpdateProfile(currentUser.id, backendData);
-      }
-      
-    } catch (error) {
-      console.error('ProfileScreen: Error saving to backend:', error);
-      setError(error.body?.detail || error.message || 'Ошибка сохранения');
-    } finally {
-      setIsSaving(false);
+  // Работа с фото
+  const validatePhotoFile = (file) => {
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      throw new Error('Пожалуйста, выберите изображение (JPG, PNG, GIF, WebP)');
     }
-  };
 
-  // Сохранение локального профиля
-  const saveLocalProfile = async (profileData) => {
-    try {
-      const userId = currentUser?.id || user?.id;
-      if (!userId) return;
-      
-      const localData = {
-        age: profileData.age,
-        contactInfo: profileData.contactInfo,
-        knownStyles: profileData.knownStyles,
-        healthInfo: profileData.healthInfo,
-        preferredFormat: profileData.preferredFormat,
-        meetingFrequency: profileData.meetingFrequency,
-        mentorshipDuration: profileData.mentorshipDuration,
-        communicationStyle: profileData.communicationStyle,
-        mentorPreferences: profileData.mentorPreferences,
-        additionalInfo: profileData.additionalInfo,
-        photo: profileData.photo
-      };
-      
-      UserService.saveLocalProfile(userId, localData);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-      
-    } catch (error) {
-      console.error('ProfileScreen: Error saving local profile:', error);
+    if (file.size > MAX_PHOTO_SIZE) {
+      throw new Error(`Файл слишком большой. Максимальный размер ${MAX_PHOTO_SIZE / 1024 / 1024}MB`);
     }
+
+    return true;
   };
 
-  // Обработка загрузки фото
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = useCallback(async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.match('image.*')) {
-      alert('Пожалуйста, выберите изображение (JPG, PNG, GIF)');
-      return;
-    }
+    try {
+      validatePhotoFile(file);
+      setIsUploadingPhoto(true);
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Файл слишком большой. Максимальный размер 5MB');
-      return;
-    }
+      const base64String = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-    setIsUploadingPhoto(true);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result;
       setPhotoPreview(base64String);
-      
-      // Обновляем профиль
-      const updatedProfile = {
-        ...profile,
-        photo: base64String
-      };
-      setProfile(updatedProfile);
-      
-      // Сохраняем локально
-      const userId = currentUser?.id || user?.id;
+      setProfile(prev => ({ ...prev, photo: base64String }));
+
+      const userId = user?.id || AuthService.getCurrentUser()?.id;
       if (userId) {
-        UserService.saveProfilePhoto(userId, base64String);
+        UserService.saveProfilePhoto(userId, base64String); // Синхронно
       }
-      
-      setIsUploadingPhoto(false);
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
-    };
-
-    reader.onerror = () => {
-      alert('Ошибка при загрузке фото');
+    } catch (error) {
+      alert(error.message);
+    } finally {
       setIsUploadingPhoto(false);
-    };
-
-    reader.readAsDataURL(file);
-  };
-
-  // Функция для клика по фото
-  const handlePhotoClick = () => {
-    fileInputRef.current.click();
-  };
-
-  const removePhoto = () => {
-    if (window.confirm('Удалить фото профиля?')) {
-      setPhotoPreview(null);
-      
-      const updatedProfile = {
-        ...profile,
-        photo: null
-      };
-      setProfile(updatedProfile);
-      
-      // Удаляем из localStorage
-      const userId = currentUser?.id || user?.id;
-      if (userId) {
-        UserService.saveProfilePhoto(userId, null);
+      // Сбрасываем input для возможности повторной загрузки того же файла
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     }
-  };
+  }, [user]);
+
+  const removePhoto = useCallback(() => {
+    if (!window.confirm('Удалить фото профиля?')) return;
+
+    setPhotoPreview(null);
+    setProfile(prev => ({ ...prev, photo: null }));
+
+    const userId = user?.id || AuthService.getCurrentUser()?.id;
+    if (userId) {
+      UserService.saveProfilePhoto(userId, null); // Синхронно
+    }
+  }, [user]);
 
   // Сохранение всех данных
-  const handleSaveAll = async () => {
+  const handleSaveAll = useCallback(async () => {
     setIsSaving(true);
     setError(null);
-    
+
     try {
-      // Сохраняем бэкендные поля
-      await saveProfileToBackend(profile);
-      
-      // Сохраняем локальные поля
-      await saveLocalProfile(profile);
-      
+      const userId = user?.id || AuthService.getCurrentUser()?.id;
+      if (!userId) {
+        throw new Error('Пользователь не найден');
+      }
+
+      // Разделяем данные для бэкенда и локального хранилища
+      const backendData = {};
+      const localData = {};
+
+      Object.entries(profile).forEach(([key, value]) => {
+        if (BACKEND_FIELDS.includes(key)) {
+          backendData[key] = value || null;
+        } else if (key !== 'username' && key !== 'photo') {
+          localData[key] = value;
+        }
+      });
+
+      // Сохраняем локальные данные (синхронно)
+      try {
+        if (Object.keys(localData).length > 0) {
+          UserService.saveLocalProfile(userId, localData);
+        }
+        
+        // Сохраняем фото (синхронно)
+        if (profile.photo !== null) {
+          UserService.saveProfilePhoto(userId, profile.photo);
+        }
+      } catch (localError) {
+        console.warn('Ошибка сохранения локальных данных:', localError);
+      }
+
+      // Сохраняем бэкендные данные (асинхронно)
+      let updatedUser = null;
+      if (Object.keys(backendData).length > 0) {
+        try {
+          updatedUser = await UserService.updateProfile(backendData);
+        } catch (backendError) {
+          console.error('Ошибка сохранения на сервере:', backendError);
+          throw backendError;
+        }
+      }
+
+      if (updatedUser) {
+        setCurrentUser(prev => ({ ...prev, ...backendData }));
+      }
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+
+      if (onUpdateProfile && currentUser?.id) {
+        onUpdateProfile(currentUser.id, backendData);
+      }
     } catch (error) {
       console.error('ProfileScreen: Error saving all:', error);
+      setError('Ошибка сохранения. Проверьте подключение к интернету.');
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [profile, currentUser, user, onUpdateProfile]);
 
-  // Специальный рендер для неизменяемого поля
-  const renderReadOnlyField = (label, fieldName, value) => {
-    return (
-      <div className="profile-field" key={fieldName}>
-        <div className="field-header">
-          <label className="field-label">
-            {label}:
-            <span className="read-only-badge" title="Нельзя изменить">🔒</span>
-          </label>
-        </div>
-        <div className="field-value read-only">
-          {value || 'Не указано'}
-        </div>
-      </div>
-    );
-  };
+  // Группировка полей по секциям
+  const groupedFields = useMemo(() => {
+    const groups = {};
+    
+    Object.entries(FIELD_CONFIGS).forEach(([fieldName, config]) => {
+      if (!groups[config.section]) {
+        groups[config.section] = [];
+      }
+      groups[config.section].push({
+        name: fieldName,
+        label: config.label,
+        type: config.type,
+        isTextArea: config.textarea || false
+      });
+    });
+    
+    return groups;
+  }, []);
 
-  // Рендер поля с учетом типа
-  const renderField = (label, fieldName, value, isTextArea = false, isBackendField = false) => {
-    // Для поля username используем специальный рендер
-    if (fieldName === 'username') {
-      return renderReadOnlyField(label, fieldName, value);
+  // Рендер поля
+  const renderField = useCallback((field) => {
+    const { name, label, isTextArea, type } = field;
+    const value = profile[name];
+    const isEditing = editingField === name;
+    const isReadOnly = READONLY_FIELDS.includes(name);
+    
+    if (isReadOnly) {
+      return (
+        <div className="profile-field" key={name}>
+          <div className="field-header">
+            <label className="field-label">
+              {label}:
+              <span className="read-only-badge" title="Нельзя изменить">🔒</span>
+            </label>
+          </div>
+          <div className="field-value read-only">
+            {value || 'Не указано'}
+          </div>
+        </div>
+      );
     }
     
-    const isEditing = editingField === fieldName;
-    
     return (
-      <div className="profile-field" key={fieldName}>
+      <div className="profile-field" key={name}>
         <div className="field-header">
           <label className="field-label">
             {label}:
-            {isBackendField && (
+            {type === 'backend' && (
               <span className="backend-badge" title="Синхронизируется с сервером">🌐</span>
             )}
           </label>
           {!isEditing && value && (
             <button 
               className="profile-edit-btn"
-              onClick={() => startEditing(fieldName, value)}
+              onClick={() => startEditing(name, value)}
               aria-label={`Редактировать ${label.toLowerCase()}`}
             >
               ✎
@@ -386,6 +403,7 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
                 rows="3"
                 autoFocus
                 placeholder={`Введите ${label.toLowerCase()}`}
+                maxLength={1000}
               />
             ) : (
               <input
@@ -396,6 +414,7 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
                 className="profile-input"
                 autoFocus
                 placeholder={`Введите ${label.toLowerCase()}`}
+                maxLength={100}
               />
             )}
             <div className="edit-actions">
@@ -423,14 +442,15 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
         ) : (
           <button 
             className="add-btn"
-            onClick={() => startEditing(fieldName, '')}
+            onClick={() => startEditing(name, '')}
+            aria-label={`Добавить ${label.toLowerCase()}`}
           >
             + Добавить
           </button>
         )}
       </div>
     );
-  };
+  }, [profile, editingField, tempValue, isSaving, saveField, cancelEditing, handleKeyDown]);
 
   if (isLoading) {
     return (
@@ -450,7 +470,7 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
       <div className="profile-content">
         <div className="profile-card">
           {error && (
-            <div className="error-message">
+            <div className="error-message" role="alert">
               ⚠️ {error}
             </div>
           )}
@@ -459,15 +479,19 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
             {/* Левая колонка - фото и личная информация */}
             <div className="profile-left">
               <div className="photo-section">
-                <div 
+                <button 
                   className={`photo-placeholder ${photoPreview ? 'has-photo' : ''}`}
-                  onClick={handlePhotoClick}
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                  disabled={isUploadingPhoto}
+                  aria-label="Изменить фото профиля"
                 >
                   {photoPreview ? (
                     <img 
                       src={photoPreview} 
                       alt="Фото профиля" 
                       className="profile-photo"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="photo-text">
@@ -480,15 +504,16 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
                       {isUploadingPhoto ? 'Загрузка...' : 'Изменить фото'}
                     </span>
                   </div>
-                </div>
+                </button>
                 
                 <input
                   type="file"
                   ref={fileInputRef}
                   onChange={handlePhotoUpload}
-                  accept="image/*"
+                  accept={ALLOWED_FILE_TYPES.join(',')}
                   className="file-input"
                   disabled={isUploadingPhoto}
+                  aria-label="Выберите фото профиля"
                 />
                 
                 <div className="photo-actions">
@@ -497,6 +522,7 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
                       className="remove-btn"
                       onClick={removePhoto}
                       disabled={isUploadingPhoto}
+                      type="button"
                     >
                       {isUploadingPhoto ? 'Загрузка...' : 'Удалить фото'}
                     </button>
@@ -504,7 +530,7 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
                 </div>
                 
                 <div className="photo-hint">
-                  JPG, PNG, GIF до 5MB
+                  JPG, PNG, GIF, WebP до 5MB
                 </div>
               </div>
             </div>
@@ -512,44 +538,12 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
             {/* Правая колонка - поля анкеты */}
             <div className="profile-right">
               <div className="sections-container">
-                <div className="profile-section">
-                  <h3>ОБО МНЕ</h3>
-                  {renderField('Имя пользователя', 'username', profile.username)}
-                  {renderField('Возраст', 'age', profile.age)}
-                  {renderField('Город', 'city', profile.city, false, true)}
-                  {renderField('Контактные данные', 'contactInfo', profile.contactInfo, true)}
-                </div>
-
-                <div className="profile-section">
-                  <h3>ОПЫТ В ЙОГЕ</h3>
-                  {renderField('Стаж практики', 'experience', profile.experience, false, true)}
-                  {renderField('Знакомые стили', 'knownStyles', profile.knownStyles, true)}
-                  {renderField('Предпочитаемый стиль', 'yoga_style', profile.yoga_style, false, true)}
-                </div>
-
-                <div className="profile-section">
-                  <h3>ЦЕЛИ И ЗАПРОСЫ</h3>
-                  {renderField('Основные цели', 'goals', profile.goals, true, true)}
-                  {renderField('Состояние здоровья', 'healthInfo', profile.healthInfo, true)}
-                </div>
-
-                <div className="profile-section">
-                  <h3>ФОРМАТ РАБОТЫ</h3>
-                  {renderField('Формат занятий', 'preferredFormat', profile.preferredFormat)}
-                  {renderField('Частота встреч', 'meetingFrequency', profile.meetingFrequency)}
-                  {renderField('Срок работы', 'mentorshipDuration', profile.mentorshipDuration)}
-                </div>
-
-                <div className="profile-section">
-                  <h3>ПРЕДПОЧТЕНИЯ</h3>
-                  {renderField('Стиль общения', 'communicationStyle', profile.communicationStyle, true)}
-                  {renderField('Требования к ментору', 'mentorPreferences', profile.mentorPreferences, true)}
-                </div>
-
-                <div className="profile-section">
-                  <h3>ДОПОЛНИТЕЛЬНО</h3>
-                  {renderField('Дополнительная информация', 'additionalInfo', profile.additionalInfo, true)}
-                </div>
+                {Object.entries(groupedFields).map(([sectionTitle, fields]) => (
+                  <div className="profile-section" key={sectionTitle}>
+                    <h3>{sectionTitle}</h3>
+                    {fields.map(renderField)}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -557,18 +551,20 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
           <div className="profile-footer">
             <div className="footer-actions">
               <div className="save-section">
-                {saveSuccess && (
-                  <div className="save-success">
-                    ✓ Изменения сохранены
-                  </div>
-                )}
                 <button 
                   className="save-btn" 
                   onClick={handleSaveAll}
                   disabled={isSaving}
+                  type="button"
+                  aria-label="Сохранить все изменения"
                 >
                   {isSaving ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ ВСЁ'}
                 </button>
+                {saveSuccess && (
+                  <div className="save-success" role="status">
+                    ✓ Изменения сохранены
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -576,6 +572,19 @@ const ProfileScreen = ({ user, onUpdateProfile }) => {
       </div>
     </div>
   );
+};
+
+ProfileScreen.propTypes = {
+  user: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    username: PropTypes.string
+  }),
+  onUpdateProfile: PropTypes.func
+};
+
+ProfileScreen.defaultProps = {
+  user: null,
+  onUpdateProfile: () => {}
 };
 
 export default ProfileScreen;
