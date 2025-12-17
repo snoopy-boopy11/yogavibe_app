@@ -186,18 +186,28 @@ const MyBookingsScreen = () => {
     try {
       const serverBookings = await BookingService.getBookings();
       
-      const formattedBookings = serverBookings.map(booking => ({
-        id: booking.id,
-        mentorId: booking.mentor_id,
-        mentorName: booking.mentor?.name || 'Неизвестный ментор',
-        sessionDate: new Date(booking.session_date),
-        durationMinutes: booking.duration_minutes,
-        price: booking.price,
-        status: booking.status,
-        notes: booking.notes,
-        createdAt: booking.created_at,
-        sessionType: booking.session_type || 'individual'
-      }));
+      const formattedBookings = serverBookings.map(booking => {
+      
+        const formattedBooking = {
+          id: booking.id,
+          mentorId: booking.mentor_id,
+          mentorName: booking.mentor?.name || 'Неизвестный ментор',
+          sessionDate: new Date(booking.session_date),
+          durationMinutes: booking.duration_minutes,
+          price: booking.price,
+          status: booking.status || 'active',
+          notes: booking.notes,
+          createdAt: booking.created_at ? new Date(booking.created_at) : new Date(),
+          sessionType: booking.session_type || 'individual'
+        };
+        
+        if (booking.mentor && typeof booking.mentor === 'object') {
+          formattedBooking.mentorCity = booking.mentor.city;
+          formattedBooking.mentorYogaStyle = booking.mentor.yoga_style;
+        }
+      
+      return formattedBooking;
+    });
       
       setBookings(formattedBookings);
       

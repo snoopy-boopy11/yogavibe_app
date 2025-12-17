@@ -1,6 +1,28 @@
 import ApiService from './ApiService';
 
 class BookingService {
+  async getBookings() {
+    try {
+      const response = await api.get('/bookings');
+      // Конвертируем snake_case в camelCase
+      return response.data.map(booking => ({
+        id: booking.id,
+        mentorId: booking.mentor_id,
+        mentorName: booking.mentor?.name,
+        sessionDate: booking.session_date,
+        durationMinutes: booking.duration_minutes,
+        price: booking.price,
+        status: booking.status,
+        notes: booking.notes,
+        createdAt: booking.created_at,
+        sessionType: booking.session_type
+      }));
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      throw error;
+    }
+  }
+  
   // Получение всех бронирований пользователя
   static async getBookings() {
     try {
