@@ -177,9 +177,6 @@
 .no-notes {
   text-align: center;
   padding: 3.75rem 1.25rem;
-  background: #ded8d2;
-  border-radius: 0.9375rem;
-  box-shadow: 0 0.25rem 0.9375rem rgba(105, 80, 92, 0.08);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -360,6 +357,47 @@
 .cancel-btn:hover {
   background: #c6b3b6;
   transform: translateY(-0.0625rem);
+}
+
+.loading-notes {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  flex: 1;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(105, 80, 92, 0.3);
+  border-radius: 50%;
+  border-top-color: #69505c;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.note-edit-info {
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.edit-char-count {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  color: #69505c;
+  font-weight: 500;
+}
+
+/* Контейнер для действий с полем ввода */
+.note-input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
 }
 
 /* Адаптивность для планшетов */

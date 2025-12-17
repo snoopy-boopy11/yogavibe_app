@@ -50,7 +50,7 @@ const yogaStyles = [
   "Виньяса",
   "Айенгара",
   "Инь-йога"
-]
+];
 
 const PAGE_SIZE = 3;
 
@@ -67,23 +67,6 @@ const MainScreen = ({ user, onLogout }) => {
   // Состояние для информации о пользователе
   const [userInfo, setUserInfo] = useState(null);
   
-  // Состояние для списка заметок пользователя
-  const [notes, setNotes] = useState([]);
-  const [notesLoading, setNotesLoading] = useState(false);
-  
-  // Состояние для редактирования заметок
-  const [editingNoteId, setEditingNoteId] = useState(null);
-  const [editingText, setEditingText] = useState('');
-  
-  // Моковые уведомления
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: "Завтра в 15:00 у вас сессия с Анной", time: "2 часа назад", read: false, icon: "📅" },
-    { id: 2, text: "Новое сообщение от ментора", time: "5 часов назад", read: false, icon: "✉️" },
-    { id: 3, text: "Ваш ментор оставил отзыв о сессии", time: "Вчера", read: false, icon: "⭐" },
-    { id: 4, text: "Напоминание: оплата сессии", time: "2 дня назад", read: true, icon: "💰" },
-    { id: 5, text: "Новый ментор в вашей категории", time: "3 дня назад", read: true, icon: "👤" }
-  ]);
-  
   // Фильтры для менторов
   const [filters, setFilters] = useState({
     gender: 'all',
@@ -96,7 +79,7 @@ const MainScreen = ({ user, onLogout }) => {
   const notificationsRef = useRef(null);
   const navigate = useNavigate();
 
-  // ========== ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ ==========
+  // ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ
   useEffect(() => {
     if (user) {
       setUserInfo(user);
@@ -111,139 +94,25 @@ const MainScreen = ({ user, onLogout }) => {
     }
   }, [user, navigate]);
 
-  // Загрузка заметок при переключении на вкладку заметок
-  useEffect(() => {
-    if (activeNav === 'ЗАМЕТКИ' && userInfo) {
-      loadNotes();
-    }
-  }, [activeNav, userInfo]);
-
-  // Загрузка заметок с сервера
-  const loadNotes = async () => {
-    if (!userInfo) return;
-    
-    setNotesLoading(true);
-    try {
-      const result = await NotesService.getNotes();
-      if (result.success) {
-        setNotes(result.data || []);
-      } else {
-        setNotes([]);
-      }
-    } catch (error) {
-      console.error('Error loading notes:', error);
-      setNotes([]);
-    } finally {
-      setNotesLoading(false);
-    }
-  };
-
-  // ========== ОПЕРАЦИИ С ЗАМЕТКАМИ ==========
-  
-  // Добавление новой заметки
-  const addNote = async (text) => {
-    if (!text.trim()) {
-      return;
-    }
-    
-    try {
-      const result = await NotesService.createNote(text);
-      if (result.success) {
-        setNotes(prevNotes => [result.data, ...prevNotes]);
-      } else {
-      }
-    } catch (error) {
-      console.error('Error creating note:', error);
-    }
-  };
-
-  // Обновление существующей заметки
-  const updateNote = async (id, text) => {
-    if (!text.trim()) {
-      return;
-    }
-    
-    try {
-      const result = await NotesService.updateNote(id, text);
-      if (result.success) {
-        setNotes(prevNotes => 
-          prevNotes.map(note => 
-            note.id === id ? result.data : note
-          )
-        );
-      } else {
-      }
-    } catch (error) {
-      console.error('Error updating note:', error);
-    }
-  };
-
-  // Удаление заметки
-  const deleteNote = async (id) => {
-    // Перенести confirm сюда
-    if (!window.confirm('Вы уверены, что хотите удалить эту заметку?')) {
-      return;
-    }
-    
-    try {
-      const result = await NotesService.deleteNote(id);
-      if (result.success) {
-        setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
-        
-        // Если удаляем редактируемую заметку, сбрасываем режим редактирования
-        if (editingNoteId === id) {
-          setEditingNoteId(null);
-          setEditingText('');
-        }
-      }
-    } catch (error) {
-      console.error('Error deleting note:', error);
-    }
-  };
-
-  // Начало редактирования заметки
-  const startEditing = (note) => {
-    setEditingNoteId(note.id);
-    setEditingText(note.text);
-  };
-
-  // Сохранение отредактированной заметки
-  const saveEditing = async (id) => {
-    await updateNote(id, editingText);
-    setEditingNoteId(null);
-    setEditingText('');
-  };
-
-  // Отмена редактирования
-  const cancelEditing = () => {
-    setEditingNoteId(null);
-    setEditingText('');
-  };
-
-  // ========== ФИЛЬТРАЦИЯ МЕНТОРОВ ==========
+  // ФИЛЬТРАЦИЯ МЕНТОРОВ
   const filteredMentors = mentors.filter(mentor => {
     if (filters.gender !== 'all' && mentor.gender !== filters.gender) return false;
     if (filters.city !== 'all' && mentor.city !== filters.city) return false;
     if (filters.yogaStyle !== 'all' && mentor.yogaStyle !== filters.yogaStyle) return false;
     
-    // Обработка ценового фильтра с валидацией
     const minPrice = filters.minPrice ? parseInt(filters.minPrice) : null;
     const maxPrice = filters.maxPrice ? parseInt(filters.maxPrice) : null;
     
-    // Проверяем, что числа валидны и не отрицательные
     if (minPrice !== null) {
-      // Если minPrice не число, меньше 0 или NaN
       if (isNaN(minPrice) || minPrice < 0) return false;
       if (mentor.price < minPrice) return false;
     }
     
     if (maxPrice !== null) {
-      // Если maxPrice не число, меньше 0 или NaN
       if (isNaN(maxPrice) || maxPrice < 0) return false;
       if (mentor.price > maxPrice) return false;
     }
     
-    // Дополнительная проверка: maxPrice должен быть >= minPrice
     if (minPrice !== null && maxPrice !== null) {
       if (minPrice > maxPrice) return false;
     }
@@ -260,7 +129,7 @@ const MainScreen = ({ user, onLogout }) => {
     setPage(1);
   }, [filters]);
 
-  // ========== ОБРАБОТЧИКИ УВЕДОМЛЕНИЙ ==========
+  // ОБРАБОТЧИКИ УВЕДОМЛЕНИЙ
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
@@ -278,20 +147,7 @@ const MainScreen = ({ user, onLogout }) => {
     setShowNotifications(!showNotifications);
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(notification => ({
-      ...notification,
-      read: true
-    })));
-  };
-
-  const markAsRead = (id) => {
-    setNotifications(prev => prev.map(notification =>
-      notification.id === id ? { ...notification, read: true } : notification
-    ));
-  };
-
-  // ========== ОБРАБОТЧИКИ НАВИГАЦИИ И ФИЛЬТРОВ ==========
+  // ОБРАБОТЧИКИ НАВИГАЦИИ И ФИЛЬТРОВ
   const handleNavClick = (navItem, event) => {
     event.preventDefault();
     setActiveNav(navItem);
@@ -306,12 +162,10 @@ const MainScreen = ({ user, onLogout }) => {
 
   // Обработчик изменения ценовых полей с валидацией
   const handlePriceChange = (field, value) => {
-    // Удаляем все нецифровые символы, кроме пустой строки
     const numericValue = value === '' ? '' : value.replace(/[^0-9]/g, '');
     
-    // Если значение не пустое, проверяем, что оно положительное
     if (numericValue !== '' && parseInt(numericValue) < 0) {
-      return; // Не обновляем состояние для отрицательных значений
+      return;
     }
     
     setFilters(prev => ({
@@ -338,9 +192,7 @@ const MainScreen = ({ user, onLogout }) => {
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  // ========== РЕНДЕРИНГ ==========
+  // РЕНДЕРИНГ
   if (!userInfo) {
     return (
       <div className="loading-screen">
@@ -388,6 +240,7 @@ const MainScreen = ({ user, onLogout }) => {
           className="mail-btn" 
           onClick={toggleNotifications}
           title="Уведомления"
+          aria-label="Открыть уведомления"
         />
         
         {/* Выпадающее меню уведомлений */}
@@ -395,39 +248,14 @@ const MainScreen = ({ user, onLogout }) => {
           <div className="notifications-dropdown" ref={notificationsRef}>
             <div className="notifications-header">
               <h3>Уведомления</h3>
-              {unreadCount > 0 && (
-                <span className="notifications-count">{unreadCount} новых</span>
-              )}
             </div>
             
             <div className="notifications-list">
-              {notifications.map((notification) => (
-                <div 
-                  className={`notification-item ${notification.read ? 'read' : 'unread'}`} 
-                  key={notification.id}
-                  onClick={() => markAsRead(notification.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      markAsRead(notification.id);
-                    }
-                  }}
-                >
-                  <div className="notification-icon">{notification.icon}</div>
-                  <div className="notification-content">
-                    <p>{notification.text}</p>
-                    <span className="notification-time">{notification.time}</span>
-                  </div>
-                  {!notification.read && <div className="unread-dot"></div>}
+              <div className="notification-item">
+                <div className="notification-content">
+                  <p>Уведомлений пока нет</p>
                 </div>
-              ))}
-            </div>
-            
-            <div className="notifications-actions">
-              <button className="read-all-btn" onClick={markAllAsRead}>
-                Прочитать все
-              </button>
+              </div>
             </div>
           </div>
         )}
@@ -498,7 +326,6 @@ const MainScreen = ({ user, onLogout }) => {
                   aria-label="Минимальная цена"
                   min="0"
                   onKeyDown={(e) => {
-                    // Предотвращаем ввод минуса
                     if (e.key === '-' || e.key === 'e' || e.key === 'E') {
                       e.preventDefault();
                     }
@@ -513,7 +340,6 @@ const MainScreen = ({ user, onLogout }) => {
                   aria-label="Максимальная цена"
                   min="0"
                   onKeyDown={(e) => {
-                    // Предотвращаем ввод минуса
                     if (e.key === '-' || e.key === 'e' || e.key === 'E') {
                       e.preventDefault();
                     }
@@ -529,7 +355,7 @@ const MainScreen = ({ user, onLogout }) => {
             </div>
 
             <button className="clear-filters-btn" onClick={clearFilters} aria-label="Сбросить фильтры">
-                Сбросить
+              Сбросить
             </button>
 
             {/* Кнопка выхода из аккаунта */}
@@ -633,19 +459,7 @@ const MainScreen = ({ user, onLogout }) => {
       )}
       
       {activeNav === 'ЗАМЕТКИ' && (
-        <NotesScreen 
-          notes={notes}
-          editingNoteId={editingNoteId}
-          editingText={editingText}
-          onAddNote={addNote}
-          onUpdateNote={updateNote}
-          onDeleteNote={deleteNote}
-          onStartEditing={startEditing}
-          onSaveEditing={saveEditing}
-          onCancelEditing={cancelEditing}
-          onSetEditingText={setEditingText}
-          loading={notesLoading}
-        />
+        <NotesScreen />
       )}
       
       {activeNav === 'МОЯ АНКЕТА' && (
@@ -653,7 +467,6 @@ const MainScreen = ({ user, onLogout }) => {
           user={userInfo}
         />
       )}
-
     </div>
   );
 };
