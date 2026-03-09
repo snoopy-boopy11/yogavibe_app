@@ -10,28 +10,41 @@ class BookingService {
       });
       console.log('BookingService: Bookings received:', response);
       
-      // Конвертируем snake_case в camelCase для фронтенда
-      return response.map(booking => ({
-        id: booking.id,
-        mentorId: booking.mentor_id,
-        userId: booking.user_id,
-        mentorName: booking.mentor?.name || 'Неизвестный ментор',
-        sessionDate: booking.session_date,
-        durationMinutes: booking.duration_minutes,
-        price: booking.price,
-        status: booking.status,
-        notes: booking.notes,
-        createdAt: booking.created_at,
-        updatedAt: booking.updated_at
-      }));
+      // Сначала получаем всех менторов
+      const mentorsResponse = await ApiService.request('/mentors', {
+        method: 'GET'
+      });
+      
+      // Создаем карту менторов по ID
+      const mentorsMap = {};
+      mentorsResponse.forEach(mentor => {
+        mentorsMap[mentor.id] = mentor;
+      });
+      
+      // Конвертируем snake_case в camelCase и добавляем данные ментора
+      return response.map(booking => {
+        const mentor = mentorsMap[booking.mentor_id] || { name: 'Неизвестный ментор' };
+        
+        return {
+          id: booking.id,
+          mentorId: booking.mentor_id,
+          userId: booking.user_id,
+          mentorName: mentor.name,
+          mentorCity: mentor.city,
+          mentorYogaStyle: mentor.yoga_style,
+          sessionDate: booking.session_date,
+          durationMinutes: booking.duration_minutes,
+          price: booking.price,
+          status: booking.status,
+          notes: booking.notes,
+          createdAt: booking.created_at,
+          updatedAt: booking.updated_at
+        };
+      });
       
     } catch (error) {
       console.error('BookingService: Error fetching bookings:', error);
-      
-      // Пробрасываем оригинальную ошибку с дополнительной информацией
-      const enhancedError = new Error(`Не удалось загрузить записи: ${error.message || 'Неизвестная ошибка'}`);
-      enhancedError.originalError = error;
-      throw enhancedError;
+      throw error;
     }
   }
 
